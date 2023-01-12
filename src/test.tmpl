@@ -1,0 +1,30 @@
+Hello easy_template !
+
+此文档创建于 {{ meta.date?.child.to_string()}}
+
+{{ for (k,v) in array.with_index("") }}
+
+{{ k }}.{{v}}
+
+{{ break }}
+
+{{ end-for }}
+
+
+{{ loop }}
+
+{{if expr }}
+
+{{else if expr}}
+
+{{let item = data.item}}
+
+ {{{item.to_string()}}
+
+{{else}}
+
+{{fi}}
+
+{{break}}
+
+{{end-loop}}

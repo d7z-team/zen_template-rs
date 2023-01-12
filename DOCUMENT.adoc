@@ -1,0 +1,100 @@
+= 相关文档
+:experimental:
+:icons: font
+:toc: right
+:toc-title: 目录
+:toclevels: 4
+:source-highlighter: rouge
+
+
+== 数据类型
+
+== 语法
+
+=== 变量
+
+变量由以下几种类型组成：
+
+* *Number*: 对应 *rust* 的 `i64`
+* *Float*: 对应 *rust* 的 `f64`
+* *Text*: 对应 *rust* 的 `String`
+* *Bool*: 对应 *rust* 的 `Bool`
+* *Array*: 对应 *rust* 的 `Vec`
+* *Table*: 对应 *rust* 的 `struct`
+* *None*: 空数据标记，如果表达式最终结果为 *None* 将不会渲染
+
+变量命名必须符合此 `^[_a-zA-Z][_a-zA-Z0-9]*$` 正则表达式。
+
+=== 表达式
+
+以下均为表达式：
+
+[source,text]
+----
+{{ data }} : 结果为变量的值
+{{ data.get(1) }} : 结果为变量调用函数的值 == get(data,1)
+{{ data.items }} : 会被翻译为 data.get('items') ==> get(data,'items')
+{{ data.items.0 }} : 会被翻译为 data.get('items').get(0) ==> get(get(data,'items'),0)
+{{ x+y }} :  会被翻译为 x.add(y) => add(x,y)
+{{ x-y }} :  会被翻译为 x.sub(y) ==> sub(x,y)
+{{ x*y }} :  会被翻译为 x.mult(y) ==> mult(x,y)
+{{ x/y }} :  会被翻译为 x.div(y) ==> div(x,y)
+{{ x%y }} :  会被翻译为 x.mod(y) ==> mod(x,y)
+{{ x<y }} :  会被翻译为 x.langle(y) ==> langle(x,y)
+{{ x>y }} :  会被翻译为 x.rangle(y) ==> rangle(x,y)
+{{ x>=y }} : 会被翻译为 x.ge(y) ==> ge(x,y)
+{{ x<=y }} : 会被翻译为 x.le(y) ==> le(x,y)
+{{ x == y }} : 会被翻译为 x.eq(y) ==> eq(x,y)
+{{ x?:y }} : 会被翻译为 x.get_or_default(y) ==> or_default(x,y)
+
+----
+
+像此表达式最终会被翻译为如下 `AST`
+
+[source,text]
+----
+{{ earth.asia.us?:earth.europe.cn?:mars.asia?.us?:china + 12 }}
+----
+
+[plantuml]
+----
+@startuml
+
+rectangle Arrows
+rectangle Up
+rectangle Down
+rectangle Left
+rectangle Right
+
+Arrows -u-> Up
+Arrows -d-> Down
+Arrows -l-> Left
+Arrows -r-> Right
+Arrows -r-> RightS
+@enduml
+----
+
+=== 重映射变量
+
+你可以将一组表达式映射为一个新的变量，此变量仅可用在当前作用域，具体如下所示：
+
+WARNING: 此变量会在当前作用域覆盖之前的变量，直到离开此作用域。如果此表达式不存在则会导致渲染失败，除非标记此表达式可为空值。
+
+[source,text]
+----
+如果你创建了一个变量,那么你就创建了一个变量
+{{let new_var = oldvar.child}}
+你也可以创建一个为空的变量
+{{let new_var = oldvar.child?}}
+----
+
+=== 输出表达式
+
+想要直接输出表达式，可直接在文档的任何地方填充 `{{ expr }}`，例如
+
+[source,text]
+----
+Hello {{ expr }}
+----
+
+===
