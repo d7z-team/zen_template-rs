@@ -45,7 +45,10 @@
 {{ x>=y }} : 会被翻译为 x.ge(y) ==> ge(x,y)
 {{ x<=y }} : 会被翻译为 x.le(y) ==> le(x,y)
 {{ x == y }} : 会被翻译为 x.eq(y) ==> eq(x,y)
+{{ x && y }} :  会被翻译为 x.add(y) => and(x,y)
+{{ x || y }} :  会被翻译为 x.add(y) => or(x,y)
 {{ x?:y }} : 会被翻译为 x.get_or_default(y) ==> or_default(x,y)
+{{ x? }} : 会被翻译为 x.get_or_default(y) ==> or_default(x,None)
 
 ----
 
@@ -53,24 +56,12 @@
 
 [source,text]
 ----
-{{ earth.asia.us?:earth.europe.cn?:mars.asia?.us?:china + 12 }}
+{{ (earth.asia.us?:earth.europe.cn?:mars.asia?.us?:china + 12).format('utc') }}
 ----
 
 [plantuml]
 ----
 @startuml
-
-rectangle Arrows
-rectangle Up
-rectangle Down
-rectangle Left
-rectangle Right
-
-Arrows -u-> Up
-Arrows -d-> Down
-Arrows -l-> Left
-Arrows -r-> Right
-Arrows -r-> RightS
 @enduml
 ----
 

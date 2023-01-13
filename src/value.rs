@@ -18,6 +18,9 @@ pub enum Value {
 
 impl Value {
     fn from(src: &str) -> TmplResult<Value> {
+        if src == "None" {
+            return Ok(Value::None)
+        }
         src.parse::<bool>().map(|e| Bool(e))
             .or_else(|_| src.parse::<i64>().map(|e| Number(e)))
             .or_else(|_| src.parse::<f64>().map(|e| Float(e)))
