@@ -105,5 +105,8 @@ mod test {
         assert_eq!(
             get_expr(r#"hello {{world}}"#),
             Some("{{world}}"));
+        assert_eq!(
+            get_expr("hello {{wo\nrld}}"),
+            Some("{{wo\nrld}}"));
     }
 }
