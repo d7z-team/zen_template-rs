@@ -10,21 +10,16 @@
 
 {{ end-for }}
 
-
-{{ loop }}
-
 {{if expr }}
 
 {{else if expr}}
 
 {{let item = data.item}}
 
- {{{item.to_string()}}
+{{ item.to_string()}}
 
 {{else}}
 
 {{fi}}
 
 {{break}}
-
-{{end-loop}}

@@ -23,7 +23,7 @@ pub fn find_block(src: &str, index: usize, start_tag: &str, end_tag: &str) -> Op
 }
 
 /// 查询文本块，并且排除忽略的文本块
-pub fn find_block_skip_ignore(src: &str, index: usize, start_tag: &str, end_tag: &str, ignore_block: Vec<(&str, &str)>) -> Option<(usize, usize)> {
+pub fn find_block_skip_ignore(src: &str, index: usize, start_tag: &str, end_tag: &str, ignore_block: &Vec<(&str, &str)>) -> Option<(usize, usize)> {
     // 如果找不到文本块或者找到的文本块只有开始，没有结束则返回 None
     let (start, mut end) = find_block(src, index, start_tag, end_tag)
         .filter(|e| e.1.is_some())
@@ -68,9 +68,36 @@ pub fn find_block_skip_ignore(src: &str, index: usize, start_tag: &str, end_tag:
     Some((start, end))
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub enum Block<'a> {
+    Tag(&'a str),
+    Out(&'a str),
+}
+
+pub fn split_block<'a>(src: &'a str, start_tag: &str, end_tag: &str, ignore_block: &Vec<(&str, &str)>) -> Vec<Block<'a>> {
+    let mut result = vec![];
+    let mut index = 0;
+    loop {
+        if let Some((current_start, current_end)) = find_block_skip_ignore(src, index, start_tag, end_tag, ignore_block) {
+            if current_start > index {
+                result.push(Block::Out(&src[index..current_start]));
+            }
+            result.push(Block::Tag(&src[current_start + start_tag.len()..current_end - end_tag.len()]));
+            index = current_end
+        } else {
+            if index < src.len() {
+                result.push(Block::Out(&src[index..]));
+            }
+            break;
+        }
+    }
+    result
+}
+
 #[cfg(test)]
 mod test {
-    use crate::utils::str::{find, find_block, find_block_skip_ignore};
+    use crate::utils::str::{Block, find, find_block, find_block_skip_ignore, split_block};
+    use crate::utils::str::Block::Tag;
 
     #[test]
     fn test_find() {
@@ -91,7 +118,7 @@ mod test {
         fn get_expr(src: &str) -> Option<&str> {
             find_block_skip_ignore(
                 src, 0
-                , "{{", "}}", vec![("\"", "\""), ("'", "'")]).map(|e| &src[e.0..e.1])
+                , "{{", "}}", &vec![("\"", "\""), ("'", "'")]).map(|e| &src[e.0..e.1])
         }
         assert_eq!(
             get_expr(r#"hello {{ self.data + current.context + 'item}}' + "" }}"#),
@@ -106,10 +133,24 @@ mod test {
             get_expr(r#"hello {{world}}"#),
             Some("{{world}}"));
         assert_eq!(
+            get_expr(r#"hello {{wo\}}rld}}"#),
+            Some("{{wo\\}}rld}}"));
+        assert_eq!(
             get_expr("hello {{wo\nrld}}"),
             Some("{{wo\nrld}}"));
         assert_eq!(
             get_expr("hello好{{wo\nrld}}"),
             Some("{{wo\nrld}}"));
+    }
+
+    #[test]
+    fn test_split_block() {
+        fn split_block_test(src: &str) -> Vec<Block> {
+            split_block(src, "{{", "}}", &vec![("\"", "\""), ("'", "'")])
+        }
+        assert_eq!(
+            split_block_test("hello {{world}}"),
+            vec![Block::Out("hello "), Tag("world")]
+        );
     }
 }

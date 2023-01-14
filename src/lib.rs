@@ -1,17 +1,18 @@
 #![allow(dead_code)]
 
 use std::collections::HashMap;
-use crate::compile::{Compile, TemplateAst};
 
+use crate::compile::{Compile, TemplateAst};
 use crate::err::{TemplateError, TmplResult};
+use crate::syntax::{default_expressions_symbol, default_state, Operator};
 use crate::value::TmplValue;
 
 mod err;
 mod value;
 mod template;
 mod compile;
-mod syntax;
-mod utils;
+pub mod syntax;
+pub mod utils;
 
 pub type ValueFormatter = dyn Fn(&Vec<&TmplValue>) -> TmplResult<TmplValue>;
 
@@ -27,25 +28,47 @@ pub struct TemplateConfig {
     primitives: HashMap<String, HashMap<usize, Box<ValueFormatter>>>,
     /// 符号表达式渲染规则
     expressions_symbol: Vec<(String, String)>,
+    /// 模板块符号
+    block_symbol: (String, String),
+    /// 流程控制符号
+    operator: Vec<Operator>,
 }
 
+impl Default for TemplateConfig {
+    fn default() -> Self {
+        TemplateConfig {
+            primitives: HashMap::new(),
+            expressions_symbol: default_expressions_symbol(),
+            block_symbol: (String::from("{{"), String::from("}}")),
+            operator: default_state(),
+        }
+    }
+}
 
 impl EasyTemplate {
+    pub fn new() -> Self {
+        EasyTemplate { templates: Default::default(), config: Default::default() }
+    }
     /// 注册模板
     fn register_template(&mut self, name: &str, template: &str) -> TmplResult<()> {
-        let tmpls = &mut self.templates;
-        if tmpls.contains_key(name) {
+        let tmpl_map = &mut self.templates;
+        if tmpl_map.contains_key(name) {
             // key exists.
             return Err(TemplateError::ExistsError(name.to_string()));
         }
-        tmpls.insert(name.to_string(),
-                     Compile::build_template(template, &self.config)?);
+        tmpl_map.insert(name.to_string(),
+                        Compile::build_template(template, &self.config)?);
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod test {
+    use crate::EasyTemplate;
+
     #[test]
-    fn test() {}
+    fn test() {
+        let mut template = EasyTemplate::new();
+        template.register_template("test", include_str!("test.tmpl")).unwrap();
+    }
 }

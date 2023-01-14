@@ -120,7 +120,7 @@ format(
 条件判断
 {{if expr }}
 匹配条件一
-{{else if expr }}
+{{else-if expr }}
 匹配条件二
 {{else}}
 默认结果
