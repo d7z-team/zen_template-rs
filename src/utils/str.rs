@@ -2,7 +2,7 @@ pub fn find(src: &str, begin: usize, tag: &str) -> Option<usize> {
     let mut start = begin;
     loop {
         if let Some(block_start) = src[start..].find(tag).map(|e| e + start) {
-            if block_start > 0 && &src[(block_start - 1)..block_start] == "\\" {
+            if block_start > 0 && &src.as_bytes()[(block_start - 1)..block_start] == "\\".as_bytes() {
                 //跳过无关匹配
                 start = block_start + tag.len();
             } else {
@@ -107,6 +107,9 @@ mod test {
             Some("{{world}}"));
         assert_eq!(
             get_expr("hello {{wo\nrld}}"),
+            Some("{{wo\nrld}}"));
+        assert_eq!(
+            get_expr("hello好{{wo\nrld}}"),
             Some("{{wo\nrld}}"));
     }
 }
