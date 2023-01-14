@@ -9,6 +9,7 @@ pub type TmplResult<T> = Result<T, TemplateError>;
 pub enum TemplateError {
     StdErr(std::fmt::Error),
     GenericError(String),
+    ExistsError(String),
 }
 
 
@@ -17,6 +18,7 @@ impl Display for TemplateError {
         match self {
             TemplateError::StdErr(err) => write!(f, "{}", err),
             TemplateError::GenericError(err) => write!(f, "{:?}", err),
+            TemplateError::ExistsError(key) => write!(f, "key '{}' exists. ", key)
         }
     }
 }

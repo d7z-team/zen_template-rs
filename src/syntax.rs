@@ -1,4 +1,5 @@
-fn default_expressions_syntax() -> Vec<(String, String)> {
+/// 表达式符号映射表，将相关的表达式转换为原语
+fn default_expressions_symbol() -> Vec<(String, String)> {
     let mut syn_map = Vec::new();
     let mut register = |tag: &str, evolution: &str| {
         syn_map.push((tag.to_string(), evolution.to_string()))

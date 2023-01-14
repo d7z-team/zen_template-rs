@@ -1,3 +1,5 @@
+use crate::err::TmplResult;
+use crate::TemplateConfig;
 use crate::value::TmplValue;
 
 ///表达式
@@ -14,6 +16,15 @@ pub(crate) struct Primitive {
     args: Vec<Expression>,
 }
 
+pub struct TemplateAst {}
+
+pub struct Compile {}
+
+impl Compile {
+    pub(crate) fn build_template(_src: &str, _config: &TemplateConfig) -> TmplResult<TemplateAst> {
+        todo!()
+    }
+}
 
 #[cfg(test)]
 mod test {
