@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use crate::compile::{Compile, TemplateAst};
 use crate::err::{TemplateError, TmplResult};
@@ -19,7 +20,8 @@ pub type ValueFormatter = dyn Fn(&Vec<&TmplValue>) -> TmplResult<TmplValue>;
 /// EasyTemplate 模板引擎
 pub struct EasyTemplate {
     templates: HashMap<String, TemplateAst>,
-    config: TemplateConfig,
+    config: Rc<TemplateConfig>,
+    compile: Compile,
 }
 
 /// 模板配置项
@@ -45,10 +47,15 @@ impl Default for TemplateConfig {
     }
 }
 
-impl EasyTemplate {
-    pub fn new() -> Self {
-        EasyTemplate { templates: Default::default(), config: Default::default() }
+impl Default for EasyTemplate {
+    fn default() -> Self {
+        let config = Rc::new(TemplateConfig::default());
+        let compile = Compile::new(Rc::clone(&config));
+        EasyTemplate { templates: Default::default(), config, compile }
     }
+}
+
+impl EasyTemplate {
     /// 注册模板
     fn register_template(&mut self, name: &str, template: &str) -> TmplResult<()> {
         let tmpl_map = &mut self.templates;
@@ -56,8 +63,7 @@ impl EasyTemplate {
             // key exists.
             return Err(TemplateError::ExistsError(name.to_string()));
         }
-        tmpl_map.insert(name.to_string(),
-                        Compile::build_template(template, &self.config)?);
+        tmpl_map.insert(name.to_string(), self.compile.build_template(template)?);
         Ok(())
     }
 }
@@ -68,7 +74,7 @@ mod test {
 
     #[test]
     fn test() {
-        let mut template = EasyTemplate::new();
+        let mut template = EasyTemplate::default();
         template.register_template("test", include_str!("test.tmpl")).unwrap();
     }
 }

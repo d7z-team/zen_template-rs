@@ -1,8 +1,10 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use crate::err::TmplResult;
+use crate::syntax::Operator;
 use crate::TemplateConfig;
-use crate::utils::str::{find_block_skip_ignore, split_block};
+use crate::utils::str::split_block;
 use crate::value::TmplValue;
 
 ///表达式
@@ -31,14 +33,19 @@ pub enum TemplateAst {
     Command(String, Vec<Option<Expression>>),
 }
 
-pub struct Compile {}
+pub struct Compile {
+    config: Rc<TemplateConfig>,
+}
 
 impl Compile {
-    pub(crate) fn build_template(src: &str, config: &TemplateConfig) -> TmplResult<TemplateAst> {
+    pub(crate) fn new(config: Rc<TemplateConfig>) -> Self {
+        Compile { config }
+    }
+    pub fn build_template(&self, src: &str) -> TmplResult<TemplateAst> {
         let src_block =
-            split_block(src, &config.block_symbol.0, &config.block_symbol.1, &vec![("'", "'"), ("\"", "\"")]);
-
-
+            split_block(src, &self.config.block_symbol.0, &self.config.block_symbol.1, &vec![("'", "'"), ("\"", "\"")]);
+        let operators = &self.config.operator;
+        let start_tags = operators.iter().map(|e| (e.get_start_tag(), e)).collect::<HashMap<&str, &Operator>>();
         todo!()
     }
 }
