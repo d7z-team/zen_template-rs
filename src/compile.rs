@@ -26,7 +26,7 @@ pub enum TemplateAst {
     // 直接变量渲染
     Expr(Expression),
     // 流程控制
-    State(String, Vec<Option<Expression>>, Vec<((String, Option<Expression>), Vec<TemplateAst>)>),
+    State(String, Vec<((String, Option<Expression>), Vec<TemplateAst>)>),
     // 指令控制
     Command(String, Vec<Option<Expression>>),
 }

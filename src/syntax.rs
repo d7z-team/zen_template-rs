@@ -1,37 +1,41 @@
+use std::collections::HashSet;
+
 /// 表达式符号映射表，将相关的表达式转换为原语
 pub fn default_expressions_symbol() -> Vec<(String, String)> {
     let mut syn_map = Vec::new();
     let mut register = |tag: &str, evolution: &str| {
         syn_map.push((tag.to_string(), evolution.to_string()))
     };
-    register(".", "get($1,$2)");
-    register("?:", "get_or_default($1,$2)");
-    register("?.", "get_or_none($1,$2)");
+    register(".", "get($left,$right)");
+    register("?:", "get_or_default($left,$right)");
+    register("?.", "get_or_none($left,$right)");
 
-    register("*", "multi($1,$2)");
-    register("/", "div($1,$2)");
-    register("%", "mod($1,$2)");
+    register("*", "multi($left,$right)");
+    register("/", "div($left,$right)");
+    register("%", "mod($left,$right)");
 
-    register("+", "add($1,$2)");
-    register("-", "sub($1,$2)");
+    register("+", "add($left,$right)");
+    register("-", "sub($left,$right)");
 
-    register(" is ", "eq(type($1),$2)");
-    register("==", "eq($1,$2)");
-    register("!=", "not_eq($1,$2)");
-    register(">=", "ge($1,$2)");
-    register("<=", "le($1,$2)");
-    register(">", "r_angle($1,$2)");
-    register("<", "l_angle($1,$2)");
+    register(" is ", "eq(type($left),$right)");
+    register("==", "eq($left,$right)");
+    register("!=", "not_eq($left,$right)");
+    register(">=", "ge($left,$right)");
+    register("<=", "le($left,$right)");
+    register(">", "r_angle($left,$right)");
+    register("<", "l_angle($left,$right)");
 
-    register("&&", "and($1,$2)");
-    register("||", "or($1,$2)");
+    register("&&", "and($left,$right)");
+    register("||", "or($left,$right)");
     syn_map
 }
 
 /// 流程控制关键字和语法标记
 pub struct OperatorTag {
+    // 操作符标记
     tag: String,
-    syntax: Vec<String>,
+    // 操作符语法
+    syntax: HashSet<String>,
 }
 
 /// 带子流程的操作运算
@@ -70,6 +74,7 @@ pub fn default_state() -> Vec<Operator> {
     let mut result = Vec::new();
     result.push(Operator::new_branch("for", vec![], "end-for"));
     result.push(Operator::new_branch("loop", vec![], "end-loop"));
+    result.push(Operator::new_branch("switch", vec!["case","default"], "end-switch"));
     result.push(Operator::new_branch("if", vec!["else-if", "else"], "end-if"));
     result.push(Operator::new_command("include", vec![]));
     result.push(Operator::new_command("let", vec![]));
