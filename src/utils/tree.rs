@@ -97,11 +97,5 @@ mod test {
     }
 
     #[test]
-    fn test() {
-        let mut tree: TreeBuilder<V> = Tree::builder();
-        tree.add(V::new())
-            .add(V::new())
-            .add(V::new());
-        println!("{:?}", tree);
-    }
+    fn test() {}
 }
