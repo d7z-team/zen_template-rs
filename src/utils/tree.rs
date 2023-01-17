@@ -6,8 +6,14 @@ use std::rc::{Rc, Weak};
 #[derive(Debug)]
 struct Tree<T: Debug + Sized> {
     pub root: Rc<RefCell<TreeEntity<T>>>,
+}
+
+#[derive(Debug)]
+struct TreeBuilder<T: Debug + Sized> {
+    pub root: Rc<RefCell<TreeEntity<T>>>,
     pub pointer: Weak<RefCell<TreeEntity<T>>>,
 }
+
 
 #[derive(Debug)]
 struct TreeEntity<T: Debug + Sized> {
@@ -16,11 +22,21 @@ struct TreeEntity<T: Debug + Sized> {
     parent: Weak<RefCell<TreeEntity<T>>>,
 }
 
+
+
 impl<T: Sized + Debug> Tree<T> {
-    fn new() -> Tree<T> {
+    fn builder() -> TreeBuilder<T> {
+       TreeBuilder::new()
+    }
+
+}
+
+
+impl<T: Sized + Debug> TreeBuilder<T> {
+    fn new() -> TreeBuilder<T> {
         let entity = Rc::new(RefCell::new(TreeEntity { data: None, child: vec![], parent: Default::default() }));
         let weak = Rc::downgrade(&entity);
-        Tree {
+        TreeBuilder {
             root: entity,
             pointer: weak,
         }
@@ -39,27 +55,37 @@ impl<T: Sized + Debug> Tree<T> {
     fn set(&mut self, new_data: T) -> Option<T> {
         self._set(Some(new_data))
     }
-    fn add(&mut self, data: T) -> &mut Tree<T> {
+    fn add(&mut self, data: T) -> &mut TreeBuilder<T> {
+        self._add(Some(data))
+    }
+    fn _add(&mut self, data: Option<T>) -> &mut TreeBuilder<T> {
         if let Some(item) = self.pointer.upgrade() {
             let mut ref_mut = item.borrow_mut();
             ref_mut.child.push(Rc::new(RefCell::new(TreeEntity {
-                data: Some(data),
+                data,
                 child: vec![],
                 parent: Rc::downgrade(&item),
             })))
         }
         self
     }
-    fn new_child(&mut self, data: T) -> &mut Tree<T> {
+
+    fn new_empty_child(&mut self) -> &mut TreeBuilder<T> {
+        self
+    }
+    fn new_child(&mut self, data: T) -> &mut TreeBuilder<T> {
+        self.add(data);
+        if let Some(item) = self.pointer.upgrade() {
+            item.borrow_mut().child.last().unwrap();
+        }
         self
     }
 }
-
 #[cfg(test)]
 mod test {
     use std::fmt::Debug;
 
-    use crate::utils::tree::Tree;
+    use crate::utils::tree::{Tree, TreeBuilder};
 
     #[derive(Debug)]
     struct V {}
@@ -72,10 +98,10 @@ mod test {
 
     #[test]
     fn test() {
-        let mut tree: Tree<V> = Tree::new();
-        tree.add(V::new());
-        tree.add(V::new());
-        tree.add(V::new());
+        let mut tree: TreeBuilder<V> = Tree::builder();
+        tree.add(V::new())
+            .add(V::new())
+            .add(V::new());
         println!("{:?}", tree);
     }
 }
