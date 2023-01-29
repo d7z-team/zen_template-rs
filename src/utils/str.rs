@@ -70,8 +70,8 @@ pub fn find_block_skip_ignore(src: &str, index: usize, start_tag: &str, end_tag:
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Block<'a> {
-    Tag(&'a str),
-    Out(&'a str),
+    Hit(&'a str),
+    Static(&'a str),
 }
 
 pub fn split_block<'a>(src: &'a str, start_tag: &str, end_tag: &str, ignore_block: &Vec<(&str, &str)>) -> Vec<Block<'a>> {
@@ -80,13 +80,13 @@ pub fn split_block<'a>(src: &'a str, start_tag: &str, end_tag: &str, ignore_bloc
     loop {
         if let Some((current_start, current_end)) = find_block_skip_ignore(src, index, start_tag, end_tag, ignore_block) {
             if current_start > index {
-                result.push(Block::Out(&src[index..current_start]));
+                result.push(Block::Static(&src[index..current_start]));
             }
-            result.push(Block::Tag(&src[current_start + start_tag.len()..current_end - end_tag.len()]));
+            result.push(Block::Hit(&src[current_start + start_tag.len()..current_end - end_tag.len()]));
             index = current_end
         } else {
             if index < src.len() {
-                result.push(Block::Out(&src[index..]));
+                result.push(Block::Static(&src[index..]));
             }
             break;
         }
@@ -94,10 +94,11 @@ pub fn split_block<'a>(src: &'a str, start_tag: &str, end_tag: &str, ignore_bloc
     result
 }
 
+
 #[cfg(test)]
 mod test {
     use crate::utils::str::{Block, find, find_block, find_block_skip_ignore, split_block};
-    use crate::utils::str::Block::Tag;
+    use crate::utils::str::Block::Hit;
 
     #[test]
     fn test_find() {
@@ -150,7 +151,7 @@ mod test {
         }
         assert_eq!(
             split_block_test("hello {{world}}"),
-            vec![Block::Out("hello "), Tag("world")]
+            vec![Block::Static("hello "), Hit("world")]
         );
     }
 }
