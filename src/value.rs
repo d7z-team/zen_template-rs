@@ -31,26 +31,36 @@ impl ToString for TmplValue {
             TmplValue::Number(n) => n.to_string(),
             TmplValue::Text(t) => t.to_string(),
             TmplValue::Bool(b) => b.to_string(),
-            TmplValue::Array(a) => a.iter().map(|e| e.to_string()).collect::<Vec<String>>().join(",").to_string(),
-            TmplValue::Table(t) => t.iter().map(|e| format!("{}={}", e.0.to_string(), e.1.to_string()))
-                .collect::<Vec<String>>().join(",").to_string(),
-            TmplValue::None => "None".to_string()
+            TmplValue::Array(a) => a
+                .iter()
+                .map(|e| e.to_string())
+                .collect::<Vec<String>>()
+                .join(",")
+                .to_string(),
+            TmplValue::Table(t) => t
+                .iter()
+                .map(|e| format!("{}={}", e.0.to_string(), e.1.to_string()))
+                .collect::<Vec<String>>()
+                .join(",")
+                .to_string(),
+            TmplValue::None => "None".to_string(),
         }
     }
 }
 
 impl TmplValue {
     pub fn from(src: &str) -> TmplResult<TmplValue> {
-        src.parse::<bool>().map(|e| TmplValue::Bool(e))
+        src.parse::<bool>()
+            .map(|e| TmplValue::Bool(e))
             .or_else(|_| src.parse::<i64>().map(|e| TmplValue::Number(e)))
             .or_else(|_| src.parse::<f64>().map(|e| TmplValue::Float(e)))
             .or_else(|_| Ok(TmplValue::Text(src.to_string())))
     }
 
-
     #[cfg(any(feature = "json", test))]
     pub fn from_json(src: &str) -> TmplResult<TmplValue> {
-        let value: JsonValue = serde_json::from_str(src).map_err(|e| TemplateError::GenericError(e.to_string()))?;
+        let value: JsonValue =
+            serde_json::from_str(src).map_err(|e| TemplateError::GenericError(e.to_string()))?;
         fn covert_value(old: &JsonValue) -> TmplValue {
             match old {
                 JsonValue::Null => TmplValue::None,
@@ -63,19 +73,26 @@ impl TmplValue {
                     }
                 }
                 JsonValue::String(item) => TmplValue::Text(item.to_string()),
-                JsonValue::Array(array) => {
-                    TmplValue::Array(array.iter().map(|e| covert_value(e)).collect::<Vec<TmplValue>>())
-                }
-                JsonValue::Object(object) => {
-                    TmplValue::Table(object.iter().map(|(k, v)| (k.to_string(), covert_value(v))).collect())
-                }
+                JsonValue::Array(array) => TmplValue::Array(
+                    array
+                        .iter()
+                        .map(|e| covert_value(e))
+                        .collect::<Vec<TmplValue>>(),
+                ),
+                JsonValue::Object(object) => TmplValue::Table(
+                    object
+                        .iter()
+                        .map(|(k, v)| (k.to_string(), covert_value(v)))
+                        .collect(),
+                ),
             }
         }
         Ok(covert_value(&value))
     }
     #[cfg(any(feature = "yaml", test))]
     pub fn from_yaml(src: &str) -> TmplResult<TmplValue> {
-        let value: YamlValue = serde_yaml::from_str(src).map_err(|e| TemplateError::GenericError(e.to_string()))?;
+        let value: YamlValue =
+            serde_yaml::from_str(src).map_err(|e| TemplateError::GenericError(e.to_string()))?;
         fn covert_value(old: &YamlValue) -> TmplValue {
             match old {
                 YamlValue::Null => TmplValue::None,
@@ -88,15 +105,19 @@ impl TmplValue {
                     }
                 }
                 YamlValue::String(item) => TmplValue::Text(item.to_string()),
-                YamlValue::Sequence(array) => {
-                    TmplValue::Array(array.iter().map(|e| covert_value(e)).collect::<Vec<TmplValue>>())
-                }
-                YamlValue::Mapping(object) => {
-                    TmplValue::Table(object.iter().map(|(k, v)| (
-                        covert_value(k).to_string()
-                        , covert_value(v))).collect())
-                }
-                YamlValue::Tagged(_) => TmplValue::None
+                YamlValue::Sequence(array) => TmplValue::Array(
+                    array
+                        .iter()
+                        .map(|e| covert_value(e))
+                        .collect::<Vec<TmplValue>>(),
+                ),
+                YamlValue::Mapping(object) => TmplValue::Table(
+                    object
+                        .iter()
+                        .map(|(k, v)| (covert_value(k).to_string(), covert_value(v)))
+                        .collect(),
+                ),
+                YamlValue::Tagged(_) => TmplValue::None,
             }
         }
         Ok(covert_value(&value))
@@ -111,15 +132,28 @@ mod test {
 
     #[test]
     fn test_from() {
-        assert_eq!(TmplValue::from("false").unwrap().to_string(), TmplValue::Bool(false).to_string());
-        assert_eq!(TmplValue::from("12.33").unwrap().to_string(), TmplValue::Float(12.33).to_string());
-        assert_eq!(TmplValue::from("15").unwrap().to_string(), TmplValue::Number(15).to_string());
-        assert_eq!(TmplValue::from("text").unwrap().to_string(), TmplValue::Text("text".to_string()).to_string());
+        assert_eq!(
+            TmplValue::from("false").unwrap().to_string(),
+            TmplValue::Bool(false).to_string()
+        );
+        assert_eq!(
+            TmplValue::from("12.33").unwrap().to_string(),
+            TmplValue::Float(12.33).to_string()
+        );
+        assert_eq!(
+            TmplValue::from("15").unwrap().to_string(),
+            TmplValue::Number(15).to_string()
+        );
+        assert_eq!(
+            TmplValue::from("text").unwrap().to_string(),
+            TmplValue::Text("text".to_string()).to_string()
+        );
     }
 
     #[test]
     fn test_from_json() {
-        assert!(TmplValue::from_json(r#"
+        assert!(TmplValue::from_json(
+            r#"
          {
             "name": "John Doe",
             "age": 43,
@@ -128,7 +162,9 @@ mod test {
                 "+44 2345678"
             ]
         }
-        "#).is_ok());
+        "#
+        )
+        .is_ok());
     }
 
     #[test]

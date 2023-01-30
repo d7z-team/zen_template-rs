@@ -3,23 +3,25 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use crate::compile::{Compile, TemplateAst};
+use crate::ast::TemplateAst;
+use crate::compile::Compile;
 use crate::err::{TemplateError, TmplResult};
 use crate::syntax::{default_expressions_symbol, default_state, Operator};
 use crate::value::TmplValue;
 
-mod err;
-mod value;
-mod template;
+pub mod ast;
 mod compile;
+mod err;
 pub mod syntax;
+mod template;
 pub mod utils;
+mod value;
 
 pub type ValueFormatter = dyn Fn(&Vec<&TmplValue>) -> TmplResult<TmplValue>;
 
 /// EasyTemplate 模板引擎
 pub struct EasyTemplate {
-    templates: HashMap<String, TemplateAst>,
+    templates: HashMap<String, Vec<TemplateAst>>,
     config: Rc<TemplateConfig>,
     compile: Compile,
 }
@@ -51,7 +53,11 @@ impl Default for EasyTemplate {
     fn default() -> Self {
         let config = Rc::new(TemplateConfig::default());
         let compile = Compile::new(Rc::clone(&config));
-        EasyTemplate { templates: Default::default(), config, compile }
+        EasyTemplate {
+            templates: Default::default(),
+            config,
+            compile,
+        }
     }
 }
 
@@ -75,6 +81,8 @@ mod test {
     #[test]
     fn test() {
         let mut template = EasyTemplate::default();
-        template.register_template("test", include_str!("test.tmpl")).unwrap();
+        template
+            .register_template("test", include_str!("test.tmpl"))
+            .unwrap();
     }
 }

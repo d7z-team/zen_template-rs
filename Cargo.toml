@@ -21,5 +21,6 @@ opt-level = 'z'
 panic = 'abort'
 
 [features]
+all = ["json", "yaml"]
 json = ["serde", "serde_json"]
 yaml = ["serde", "serde_yaml"]
