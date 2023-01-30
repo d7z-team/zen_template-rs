@@ -1,32 +1,55 @@
+use crate::ast::{Expression, Primitive};
 use std::collections::HashMap;
 
+/// 符号注册
+pub struct ExprSymbol {
+    //符号
+    symbol: String,
+    // 原语翻译函数
+    covert: fn(Expression, Expression) -> Primitive,
+}
+
 /// 表达式符号映射表，将相关的表达式转换为原语
-pub fn default_expressions_symbol() -> Vec<(String, String)> {
-    let mut syn_map = Vec::new();
-    let mut register =
-        |tag: &str, evolution: &str| syn_map.push((tag.to_string(), evolution.to_string()));
-    register(".", "get($left,$right)");
-    register("?:", "get_or_default($left,$right)");
-    register("?.", "get_or_none($left,$right)");
+pub fn default_expressions_symbol() -> Vec<ExprSymbol> {
+    let mut result = Vec::new();
+    let mut register = |tag: &str, evolution: fn(Expression, Expression) -> Primitive| {
+        result.push(ExprSymbol {
+            symbol: tag.to_string(),
+            covert: evolution,
+        })
+    };
+    register(".", |e, a| Primitive::new("get", vec![e, a]));
+    register("?:", |e, a| Primitive::new("get_or_default", vec![e, a]));
+    register("?.", |e, a| Primitive::new("get_or_none", vec![e, a]));
 
-    register("*", "multi($left,$right)");
-    register("/", "div($left,$right)");
-    register("%", "mod($left,$right)");
+    register("*", |e, a| Primitive::new("multi", vec![e, a]));
+    register("/", |e, a| Primitive::new("div", vec![e, a]));
+    register("%", |e, a| Primitive::new("mod", vec![e, a]));
 
-    register("+", "add($left,$right)");
-    register("-", "sub($left,$right)");
+    register("+", |e, a| Primitive::new("add", vec![e, a]));
+    register("-", |e, a| Primitive::new("sub", vec![e, a]));
 
-    register(" is ", "eq(type($left),$right)");
-    register("==", "eq($left,$right)");
-    register("!=", "not_eq($left,$right)");
-    register(">=", "ge($left,$right)");
-    register("<=", "le($left,$right)");
-    register(">", "r_angle($left,$right)");
-    register("<", "l_angle($left,$right)");
+    register(" is ", |e, a| {
+        Primitive::new(
+            "eq",
+            vec![Expression::Dynamic(Primitive::new("type", vec![e])), a],
+        )
+    });
+    register("==", |e, a| Primitive::new("eq", vec![e, a]));
+    register("!=", |e, a| {
+        Primitive::new(
+            "not",
+            vec![Expression::Dynamic(Primitive::new("eq", vec![e, a]))],
+        )
+    });
+    register(">=", |e, a| Primitive::new("ge", vec![e, a]));
+    register("<=", |e, a| Primitive::new("le", vec![e, a]));
+    register(">", |e, a| Primitive::new("r_angle", vec![e, a]));
+    register("<", |e, a| Primitive::new("l_angle", vec![e, a]));
+    register("&&", |e, a| Primitive::new("and", vec![e, a]));
+    register("||", |e, a| Primitive::new("or", vec![e, a]));
 
-    register("&&", "and($left,$right)");
-    register("||", "or($left,$right)");
-    syn_map
+    result
 }
 
 // 流程控制参数

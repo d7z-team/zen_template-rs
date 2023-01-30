@@ -24,11 +24,16 @@ impl Compile {
             &vec![("'", "'"), ("\"", "\"")],
         );
         let operators = &self.config.operator;
-        let start_tags = operators
-            .iter()
+        let start_tags = operators.iter()
             .map(|e| (e.get_start_tag(), e))
             .collect::<HashMap<&str, &Operator>>();
+        let index = 0;
+        loop {
+            if index >= block.len() {
+                break
+            }
 
+        }
         Ok(result)
     }
 }

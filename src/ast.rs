@@ -3,8 +3,8 @@ use crate::value::TmplValue;
 ///表达式
 #[derive(Debug)]
 pub enum Expression {
-    Value(TmplValue),
-    Primitive(Primitive),
+    Static(TmplValue),
+    Dynamic(Primitive),
 }
 
 /// 原语
@@ -12,6 +12,15 @@ pub enum Expression {
 pub struct Primitive {
     name: String,
     args: Vec<Expression>,
+}
+
+impl Primitive {
+    pub fn new(name: &str, args: Vec<Expression>) -> Self {
+        Primitive {
+            name: name.to_string(),
+            args,
+        }
+    }
 }
 
 /// 流程下的每个流程
@@ -25,8 +34,6 @@ pub struct State {
 /// Easy Template 模板生成的抽象语法树
 #[derive(Debug)]
 pub enum TemplateAst {
-    ///静态字符串渲染
-    Static(String),
     /// 变量渲染
     Expr(Expression),
     /// 流程控制
@@ -47,11 +54,11 @@ mod test {
         Primitive {
             name: "format".to_string(),
             args: vec![
-                Expression::Primitive(Primitive {
+                Expression::Dynamic(Primitive {
                     name: "add".to_string(),
                     args: vec![],
                 }),
-                Expression::Value(TmplValue::Text("utc".to_string())),
+                Expression::Static(TmplValue::Text("utc".to_string())),
             ],
         };
     }

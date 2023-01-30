@@ -6,7 +6,7 @@ use std::rc::Rc;
 use crate::ast::TemplateAst;
 use crate::compile::Compile;
 use crate::err::{TemplateError, TmplResult};
-use crate::syntax::{default_expressions_symbol, default_state, Operator};
+use crate::syntax::{default_expressions_symbol, default_state, ExprSymbol, Operator};
 use crate::value::TmplValue;
 
 pub mod ast;
@@ -31,7 +31,7 @@ pub struct TemplateConfig {
     /// 原语
     primitives: HashMap<String, HashMap<usize, Box<ValueFormatter>>>,
     /// 符号表达式渲染规则
-    expressions_symbol: Vec<(String, String)>,
+    expressions_symbol: Vec<ExprSymbol>,
     /// 模板块符号
     block_symbol: (String, String),
     /// 流程控制符号
