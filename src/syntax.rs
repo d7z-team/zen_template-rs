@@ -110,12 +110,17 @@ pub struct SyntaxOperatorBlock {
 }
 
 impl SyntaxOperatorBlock {
-    fn new(start: OperatorTag, child: Vec<ChildStageType>, end: OperatorTag) -> Self {
+    pub fn new(start: OperatorTag, child: Vec<ChildStageType>, end: OperatorTag) -> Self {
         SyntaxOperatorBlock {
             start,
             child_state: child,
             end,
         }
+    }
+    pub fn get_matched_type(&self, tag: &str) -> Option<&ChildStageType> {
+        self.child_state
+            .iter()
+            .find(|e| tag.starts_with(e.get_tag()))
     }
 }
 

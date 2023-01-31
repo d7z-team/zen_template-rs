@@ -98,44 +98,45 @@ pub enum Block<'a> {
     Static(&'a str),
 }
 
-pub fn split_block<'a>(
-    src: &'a str,
-    start_tag: &str,
-    end_tag: &str,
-    ignore_block: &Vec<(&str, &str)>,
-) -> Vec<Block<'a>> {
-    let mut result = vec![];
-    let mut index = 0;
-    loop {
-        if let Some((current_start, current_end)) =
-            find_block_skip_ignore(src, index, start_tag, end_tag, ignore_block)
-        {
-            if current_start > index {
-                remove_skip_block(&src[index..current_start], start_tag)
-                    .iter()
-                    .flat_map(|e| remove_skip_block(*e, end_tag))
-                    .map(|e| Block::Static(e))
-                    .for_each(|e| result.push(e))
+impl Block<'static> {
+    pub fn new_group<'a>(
+        src: &'a str,
+        start_tag: &str,
+        end_tag: &str,
+        ignore_blocks: &Vec<(&str, &str)>,
+    ) -> Vec<Block<'a>> {
+        let mut result = vec![];
+        let mut index = 0;
+        loop {
+            if let Some((current_start, current_end)) =
+                find_block_skip_ignore(src, index, start_tag, end_tag, ignore_blocks)
+            {
+                if current_start > index {
+                    remove_skip_block(&src[index..current_start], start_tag)
+                        .iter()
+                        .flat_map(|e| remove_skip_block(*e, end_tag))
+                        .map(|e| Block::Static(e))
+                        .for_each(|e| result.push(e))
+                }
+                result.push(Block::Hit(
+                    &src[current_start + start_tag.len()..current_end - end_tag.len()],
+                ));
+                index = current_end
+            } else {
+                if index < src.len() {
+                    remove_skip_block(&src[index..], start_tag)
+                        .iter()
+                        .flat_map(|e| remove_skip_block(*e, end_tag))
+                        .map(|e| Block::Static(e))
+                        .for_each(|e| result.push(e))
+                }
+                break;
             }
-            result.push(Block::Hit(
-                &src[current_start + start_tag.len()..current_end - end_tag.len()],
-            ));
-            index = current_end
-        } else {
-            if index < src.len() {
-                remove_skip_block(&src[index..], start_tag)
-                    .iter()
-                    .flat_map(|e| remove_skip_block(*e, end_tag))
-                    .map(|e| Block::Static(e))
-                    .for_each(|e| result.push(e))
-            }
-            break;
         }
+        result
     }
-    result
 }
 
-//TODO: 覆盖
 pub fn remove_skip_block<'a>(src: &'a str, tag: &str) -> Vec<&'a str> {
     let skip_tag = format!("\\{}", tag);
     let mut result: Vec<&str> = src.split(&skip_tag).collect();
@@ -160,7 +161,7 @@ pub fn remove_skip_block<'a>(src: &'a str, tag: &str) -> Vec<&'a str> {
 #[cfg(test)]
 mod test {
     use crate::utils::str::Block::{Hit, Static};
-    use crate::utils::str::{find, find_block, find_block_skip_ignore, split_block, Block};
+    use crate::utils::str::{find, find_block, find_block_skip_ignore, Block};
 
     #[test]
     fn test_find() {
@@ -206,7 +207,7 @@ mod test {
     #[test]
     fn test_split_block() {
         fn split_block_test(src: &str) -> Vec<Block> {
-            split_block(src, "{{", "}}", &vec![("\"", "\""), ("'", "'")])
+            Block::new_group(src, "{{", "}}", &vec![("\"", "\""), ("'", "'")])
         }
         assert_eq!(
             split_block_test("hello {{world}}"),

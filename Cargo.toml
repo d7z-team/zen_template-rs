@@ -15,7 +15,6 @@ serde = { version = "1.0" }
 serde_json = { version = "1.0" }
 serde_yaml = { version = "0.9" }
 simple_logger = { version = "4" }
-
 indoc = "1.0"
 
 [profile.release]
@@ -24,6 +23,7 @@ opt-level = 'z'
 panic = 'abort'
 
 [features]
+default = []
 all = ["json", "yaml"]
 json = ["serde", "serde_json"]
 yaml = ["serde", "serde_yaml"]

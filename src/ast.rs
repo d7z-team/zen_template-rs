@@ -1,3 +1,5 @@
+use crate::ast::Expression::ItemStatic;
+use crate::ast::TemplateAst::ItemExpr;
 use crate::value::TmplValue;
 
 ///表达式包装
@@ -29,7 +31,7 @@ impl Primitive {
 
 /// 子流程
 #[derive(Debug)]
-pub struct State {
+pub struct Stage {
     /// 流程代号
     pub key: String,
     /// 流程参数
@@ -38,9 +40,9 @@ pub struct State {
     pub child_stage: Vec<TemplateAst>,
 }
 
-impl State {
+impl Stage {
     pub fn new(key: &str, params: Vec<Expression>) -> Self {
-        State {
+        Stage {
             key: key.to_string(),
             params,
             child_stage: vec![],
@@ -51,11 +53,11 @@ impl State {
 /// Easy Template 模板生成的抽象语法树
 #[derive(Debug)]
 pub enum TemplateAst {
-    /// 变量渲染
+    /// 变量渲染，属于控制对象
     ItemExpr(Expression),
-    /// 流程控制
-    ItemState(String, Vec<State>, bool),
-    /// 指令控制
+    /// 流程控制，属于分支对象
+    ItemStage(String, Vec<Stage>, bool),
+    /// 指令控制,属于控制对象
     ItemCommand(String, Vec<Expression>),
 }
 
@@ -64,8 +66,11 @@ impl TemplateAst {
     pub fn get_tag(&self) -> Option<&str> {
         match self {
             TemplateAst::ItemExpr(_) => None,
-            TemplateAst::ItemState(e, _, _) => Some(e),
+            TemplateAst::ItemStage(e, _, _) => Some(e),
             TemplateAst::ItemCommand(e, _) => Some(e),
         }
+    }
+    pub fn new_text(text: &str) -> TemplateAst {
+        ItemExpr(ItemStatic(TmplValue::Text(text.to_string())))
     }
 }

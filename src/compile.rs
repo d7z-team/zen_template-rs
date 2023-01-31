@@ -1,3 +1,5 @@
+pub mod ast_stack;
+
 use std::collections::HashMap;
 use std::ops::Not;
 use std::rc::Rc;
@@ -7,11 +9,12 @@ use log::{debug, info};
 use Expression::*;
 use TemplateAst::*;
 
-use crate::ast::{Expression, State, TemplateAst};
-use crate::err::TemplateError::GenericError;
+use crate::ast::{Expression, Stage, TemplateAst};
+use crate::compile::ast_stack::TmplAstStack;
+use crate::err::TemplateError::{GenericError, SyntaxError};
 use crate::err::TmplResult;
 use crate::syntax::{ChildStageType, Operator};
-use crate::utils::str::{split_block, Block};
+use crate::utils::str::Block;
 use crate::value::TmplValue;
 use crate::TemplateConfig;
 
@@ -24,65 +27,67 @@ impl Compile {
         Compile { config }
     }
     pub fn build_template(&self, src: &str) -> TmplResult<Vec<TemplateAst>> {
-        let mut result = vec![];
-        let block_list = split_block(
+        let mut stack = TmplAstStack::default();
+        let block_arr = Block::new_group(
             src,
             &self.config.block_symbol.0,
             &self.config.block_symbol.1,
             &vec![("'", "'"), ("\"", "\"")],
         );
         let mut current_point = 0;
-        let mut stack_list: Vec<TemplateAst> = vec![];
         // 将静态数据加入到栈中
+        for (index, src_block) in block_arr.iter().enumerate() {
+            if let Block::Hit(hit) = *src_block {
+                //当前块为关键字
+                if stack.has_stack() {}
+            } else if let Block::Static(text) = *src_block {
+                //当前块为静态数据
+                stack.add_inline_node(TemplateAst::new_text(text))?;
+            }
+        }
         loop {
-            if current_point >= block_list.len() {
+            if current_point >= block_arr.len() {
                 break;
             }
-            let block = &block_list[current_point];
+            let block = &block_arr[current_point];
             debug!("block: {:?}", block);
             match *block {
                 Block::Hit(hit) => {
                     let hit = hit.trim();
-                    if let Some(ItemState(key, child_state, _)) = stack_list.last_mut() {
+                    if let Some(ItemStage(key, child_state_arr, _)) = stack_arr.last_mut() {
                         //存在语法块，优先寻找语法块关闭符
-                        if let Operator::Branch(syntaxBlock, cjhi, _) =
+                        if let Operator::Branch(syntaxBlock, scope, _) =
                             Self::get_opera(&self.config.operator, key)?
                         {
-                            let syntax_child_state = syntaxBlock
-                                .child_state
-                                .iter()
-                                .filter(|e| hit.starts_with(e.get_tag()))
-                                .map(|e| (e.get_tag(), e))
-                                .collect::<Vec<(&str, &ChildStageType)>>();
-                            if let Some((tag, value)) = syntax_child_state.first() {
-                                if let ChildStageType::Single(opera_tag) = value {
-                                    if child_state
+                            if let Some(stage_type) = syntaxBlock.get_matched_type(hit) {
+                                if let ChildStageType::Single(opera_tag) = stage_type {
+                                    if let Some(_) = child_state_arr
                                         .iter()
-                                        .map(|e| &e.key)
-                                        .filter(|e| e == tag)
-                                        .count()
-                                        != 0
+                                        .find(|e| e.key == stage_type.get_tag())
                                     {
-                                        return Err(GenericError(format!("")));
+                                        return Err(SyntaxError(format!(
+                                            "语法错误，此分支已出现相同路径 {:?}.",
+                                            child_state_arr
+                                        )));
                                     }
                                 }
-                                child_state.push(State::new(*tag, vec![]))
+                                child_state_arr.push(Stage::new(stage_type.get_tag(), vec![]))
                             }
                         }
                     }
                     if let Some((key, opera)) = Self::get_match_opera(&self.config.operator, hit) {
                         let scope = match opera {
                             Operator::Branch(branch, scope, loop_state) => {
-                                stack_list.push(ItemState(
+                                stack_arr.push(ItemStage(
                                     key.to_string(),
-                                    vec![State::new(key, vec![])],
+                                    vec![Stage::new(key, vec![])],
                                     *loop_state,
                                 ));
                                 scope
                             }
                             Operator::Command(command, scope) => {
                                 Self::add_command(
-                                    &mut stack_list,
+                                    &mut stack_arr,
                                     &mut result,
                                     ItemCommand(key.to_string(), vec![]),
                                 )?;
@@ -91,19 +96,18 @@ impl Compile {
                         };
                         if scope.is_empty().not() {
                             //校验作用域
-                            let x = stack_list.last().unwrap();
+                            let x = stack_arr.last().unwrap();
                         };
                     } else {
                         //无匹配的,识别为变量
                     }
                 }
-                Block::Static(value) => Self::add_static_text(&mut stack_list, &mut result, value)?,
+                Block::Static(value) => Self::add_static_text(&mut stack_arr, &mut result, value)?,
             }
             current_point += 1;
         }
-        info!("{:#?}", result);
-        info!("{:#?}", stack_list);
-        Ok(result)
+
+        Ok(stack.root)
     }
     fn get_opera<'a>(operators: &'a Vec<Operator>, hit_str: &str) -> TmplResult<&'a Operator> {
         let map = operators
@@ -134,7 +138,7 @@ impl Compile {
     ) -> TmplResult<&'a mut Vec<TemplateAst>> {
         Ok(if let Some(last_ast) = stack.last_mut() {
             match last_ast {
-                ItemState(_, stage, _) => &mut stage.last_mut().unwrap().child_stage,
+                ItemStage(_, stage, _) => &mut stage.last_mut().unwrap().child_stage,
                 e => Err(GenericError(format!(
                     "BUG：栈中永远不会包含不支持嵌套的对象({:#?})！",
                     e

@@ -3,23 +3,18 @@
 此文档创建于 {{ meta.date?.child.to_string()}}
 
 {{ for let (k,v) =  array.with_index("") }}
-
 {{ k }}.{{v}}
-
-{{ break }}
-
 {{ end-for }}
-
+循环结束
 {{if expr }}
-
-{{else if expr}}
-
+第一种情况
+{{else-if expr}}
+第二种情况
 {{let item = data.item}}
-
 {{ item.to_string()}}
-
 {{else}}
+默认值
+{{ if '21' == '12'}}
 
-{{fi}}
-
-{{break}}
+{{end-if}}
+{{end-if}}
