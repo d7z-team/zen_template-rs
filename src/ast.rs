@@ -1,16 +1,20 @@
 use crate::value::TmplValue;
 
-///表达式
+///表达式包装
 #[derive(Debug)]
 pub enum Expression {
-    Static(TmplValue),
-    Dynamic(Primitive),
+    ///静态数据，可直接输出
+    ItemStatic(TmplValue),
+    ///动态表达式，需要结合原语计算
+    ItemDynamic(Primitive),
 }
 
-/// 原语
+/// 表达式转换的原语
 #[derive(Debug)]
 pub struct Primitive {
+    ///原语名称
     name: String,
+    ///原语参数
     args: Vec<Expression>,
 }
 
@@ -23,43 +27,45 @@ impl Primitive {
     }
 }
 
-/// 流程下的每个流程
+/// 子流程
 #[derive(Debug)]
 pub struct State {
-    name: String,
-    params: Vec<Expression>,
-    child: Vec<TemplateAst>,
+    /// 流程代号
+    pub key: String,
+    /// 流程参数
+    pub params: Vec<Expression>,
+    /// 子阶段
+    pub child_stage: Vec<TemplateAst>,
+}
+
+impl State {
+    pub fn new(key: &str, params: Vec<Expression>) -> Self {
+        State {
+            key: key.to_string(),
+            params,
+            child_stage: vec![],
+        }
+    }
 }
 
 /// Easy Template 模板生成的抽象语法树
 #[derive(Debug)]
 pub enum TemplateAst {
     /// 变量渲染
-    Expr(Expression),
+    ItemExpr(Expression),
     /// 流程控制
-    State(String, Vec<State>),
-    /// 循环控制
-    Loop(Vec<TemplateAst>),
+    ItemState(String, Vec<State>, bool),
     /// 指令控制
-    Command(String, Vec<Expression>),
+    ItemCommand(String, Vec<Expression>),
 }
 
-#[cfg(test)]
-mod test {
-    use crate::ast::{Expression, Primitive};
-    use crate::value::TmplValue;
-
-    #[test]
-    fn test() {
-        Primitive {
-            name: "format".to_string(),
-            args: vec![
-                Expression::Dynamic(Primitive {
-                    name: "add".to_string(),
-                    args: vec![],
-                }),
-                Expression::Static(TmplValue::Text("utc".to_string())),
-            ],
-        };
+impl TemplateAst {
+    ///获取结构名称
+    pub fn get_tag(&self) -> Option<&str> {
+        match self {
+            TemplateAst::ItemExpr(_) => None,
+            TemplateAst::ItemState(e, _, _) => Some(e),
+            TemplateAst::ItemCommand(e, _) => Some(e),
+        }
     }
 }

@@ -38,8 +38,17 @@ pub struct TemplateConfig {
     operator: Vec<Operator>,
 }
 
+#[cfg(any(test))]
+pub(crate) fn init_log() {
+    let _ = simple_logger::init_with_level(log::Level::Debug);
+}
+
+#[cfg(not(test))]
+pub(crate) fn init_log() {}
+
 impl Default for TemplateConfig {
     fn default() -> Self {
+        init_log();
         TemplateConfig {
             primitives: HashMap::new(),
             expressions_symbol: default_expressions_symbol(),

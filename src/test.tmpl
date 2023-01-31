@@ -2,7 +2,7 @@
 
 此文档创建于 {{ meta.date?.child.to_string()}}
 
-{{ for (k,v) in array.with_index("") }}
+{{ for let (k,v) =  array.with_index("") }}
 
 {{ k }}.{{v}}
 
@@ -23,7 +23,3 @@
 {{fi}}
 
 {{break}}
-
-
-
-for $let:value in $expr:expr

@@ -1,11 +1,12 @@
-use crate::ast::{Expression, Primitive};
 use std::collections::HashMap;
 
-/// 符号注册
+use crate::ast::{Expression, Primitive};
+
+/// 符号转换
 pub struct ExprSymbol {
-    //符号
+    ///符号
     symbol: String,
-    // 原语翻译函数
+    /// 原语翻译函数
     covert: fn(Expression, Expression) -> Primitive,
 }
 
@@ -32,14 +33,14 @@ pub fn default_expressions_symbol() -> Vec<ExprSymbol> {
     register(" is ", |e, a| {
         Primitive::new(
             "eq",
-            vec![Expression::Dynamic(Primitive::new("type", vec![e])), a],
+            vec![Expression::ItemDynamic(Primitive::new("type", vec![e])), a],
         )
     });
     register("==", |e, a| Primitive::new("eq", vec![e, a]));
     register("!=", |e, a| {
         Primitive::new(
             "not",
-            vec![Expression::Dynamic(Primitive::new("eq", vec![e, a]))],
+            vec![Expression::ItemDynamic(Primitive::new("eq", vec![e, a]))],
         )
     });
     register(">=", |e, a| Primitive::new("ge", vec![e, a]));
@@ -52,7 +53,7 @@ pub fn default_expressions_symbol() -> Vec<ExprSymbol> {
     result
 }
 
-// 流程控制参数
+/// 流程控制参数
 pub enum ParamSyntax {
     /// 关键字标记
     Keywords(String),
@@ -89,19 +90,28 @@ pub enum ChildStageType {
     Multiple(OperatorTag),
 }
 
-/// 带子流程的操作运算
-pub struct OperatorBlock {
-    /// 开始关键字
-    start: OperatorTag,
-    /// 子分支
-    child_state: Vec<ChildStageType>,
-    /// 结束关键字
-    end: OperatorTag,
+impl ChildStageType {
+    pub fn get_tag(&self) -> &str {
+        match self {
+            ChildStageType::Single(e) => &e.tag,
+            ChildStageType::Multiple(e) => &e.tag,
+        }
+    }
 }
 
-impl OperatorBlock {
+/// 带子流程的操作运算
+pub struct SyntaxOperatorBlock {
+    /// 开始关键字
+    pub start: OperatorTag,
+    /// 子分支
+    pub child_state: Vec<ChildStageType>,
+    /// 结束关键字
+    pub end: OperatorTag,
+}
+
+impl SyntaxOperatorBlock {
     fn new(start: OperatorTag, child: Vec<ChildStageType>, end: OperatorTag) -> Self {
-        OperatorBlock {
+        SyntaxOperatorBlock {
             start,
             child_state: child,
             end,
@@ -112,13 +122,25 @@ impl OperatorBlock {
 /// 流程操作符分类
 pub enum Operator {
     /// 流程分支
-    Branch(OperatorBlock, Vec<String>, bool),
+    Branch(SyntaxOperatorBlock, Vec<String>, bool),
     /// 流程控制命令
     Command(OperatorTag, Vec<String>),
 }
 
 impl Operator {
-    pub fn new_branch(block: OperatorBlock, scope: Vec<&str>, loop_state: bool) -> Self {
+    ///
+    ///
+    /// 创建新的流程
+    ///
+    /// # Arguments
+    ///
+    /// * `block`: 流程块
+    /// * `scope`: 作用域
+    /// * `loop_state`: 是否循环
+    ///
+    /// returns: Operator
+    ///
+    pub fn new_branch(block: SyntaxOperatorBlock, scope: Vec<&str>, loop_state: bool) -> Self {
         Operator::Branch(
             block,
             scope.iter().map(|e| e.to_string()).collect(),
@@ -139,7 +161,7 @@ impl Operator {
 pub fn default_state() -> Vec<Operator> {
     let mut result = Vec::new();
     result.push(Operator::new_branch(
-        OperatorBlock::new(
+        SyntaxOperatorBlock::new(
             OperatorTag::new(
                 "for",
                 vec![(
@@ -158,7 +180,7 @@ pub fn default_state() -> Vec<Operator> {
         true,
     ));
     result.push(Operator::new_branch(
-        OperatorBlock::new(
+        SyntaxOperatorBlock::new(
             OperatorTag::new("switch", vec![("default", vec![ParamSyntax::Expression])]),
             vec![
                 ChildStageType::Multiple(OperatorTag::new(
@@ -174,7 +196,7 @@ pub fn default_state() -> Vec<Operator> {
     ));
     //if
     result.push(Operator::new_branch(
-        OperatorBlock::new(
+        SyntaxOperatorBlock::new(
             OperatorTag::new(
                 "if",
                 vec![
