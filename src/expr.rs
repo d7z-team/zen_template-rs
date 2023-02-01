@@ -60,6 +60,7 @@ impl Primitive {
     }
 }
 
+// TODO: 完成表达式计算算法
 impl ExpressionManager {
     fn compile(&self, expr_str: &str) -> TmplResult<Expression> {
         let vec1 = Block::new_group(expr_str, "\"", "\"", &vec![("'", "'")]);
@@ -85,7 +86,7 @@ mod test {
     fn test() {
         let manager = ExpressionManager::default();
         manager
-            .compile(r#"这是一段测试的文本 "里\\"面" 外面"#)
+            .compile(r#"这是一段测试的文本 "里面\\" 外面"#)
             .unwrap();
     }
 }
