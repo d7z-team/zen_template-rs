@@ -5,17 +5,19 @@ use std::rc::Rc;
 
 use crate::ast::TemplateAst;
 use crate::compile::Compile;
+use crate::config::TemplateConfig;
 use crate::err::{TemplateError, TmplResult};
-use crate::syntax::{default_expressions_symbol, default_state, ExprSymbol, Operator};
 use crate::value::TmplValue;
 
 pub mod ast;
 mod compile;
+pub mod config;
 mod err;
+pub mod expr;
 pub mod syntax;
 mod template;
 pub mod utils;
-mod value;
+pub mod value;
 
 pub type ValueFormatter = dyn Fn(&Vec<&TmplValue>) -> TmplResult<TmplValue>;
 
@@ -24,38 +26,6 @@ pub struct EasyTemplate {
     templates: HashMap<String, Vec<TemplateAst>>,
     config: Rc<TemplateConfig>,
     compile: Compile,
-}
-
-/// 模板配置项
-pub struct TemplateConfig {
-    /// 原语
-    primitives: HashMap<String, HashMap<usize, Box<ValueFormatter>>>,
-    /// 符号表达式渲染规则
-    expressions_symbol: Vec<ExprSymbol>,
-    /// 模板块符号
-    block_symbol: (String, String),
-    /// 流程控制符号
-    operator: Vec<Operator>,
-}
-
-#[cfg(any(test))]
-pub(crate) fn init_log() {
-    let _ = simple_logger::init_with_level(log::Level::Debug);
-}
-
-#[cfg(not(test))]
-pub(crate) fn init_log() {}
-
-impl Default for TemplateConfig {
-    fn default() -> Self {
-        init_log();
-        TemplateConfig {
-            primitives: HashMap::new(),
-            expressions_symbol: default_expressions_symbol(),
-            block_symbol: (String::from("{{"), String::from("}}")),
-            operator: default_state(),
-        }
-    }
 }
 
 impl Default for EasyTemplate {

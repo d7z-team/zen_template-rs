@@ -1,3 +1,4 @@
+use std::ops::Not;
 use std::slice::from_raw_parts;
 use std::str::from_utf8;
 
@@ -6,7 +7,10 @@ pub fn find(src: &str, begin: usize, tag: &str) -> Option<usize> {
     let mut start = begin;
     loop {
         if let Some(block_start) = src[start..].find(tag).map(|e| e + start) {
-            if block_start > 0 && &src.as_bytes()[(block_start - 1)..block_start] == "\\".as_bytes()
+            if block_start > 0
+                && (&src.as_bytes()[(block_start - 1)..block_start] == "\\".as_bytes()
+                    && (block_start < 2
+                        || &src.as_bytes()[(block_start - 2)..block_start] != "\\".as_bytes()))
             {
                 //跳过无关匹配
                 start = block_start + tag.len();
@@ -94,7 +98,7 @@ pub fn find_block_skip_ignore(
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Block<'a> {
-    Hit(&'a str),
+    Dynamic(&'a str),
     Static(&'a str),
 }
 
@@ -104,6 +108,7 @@ impl Block<'static> {
         start_tag: &str,
         end_tag: &str,
         ignore_blocks: &Vec<(&str, &str)>,
+        replace_hit_skip_tag: bool,
     ) -> Vec<Block<'a>> {
         let mut result = vec![];
         let mut index = 0;
@@ -118,9 +123,17 @@ impl Block<'static> {
                         .map(|e| Block::Static(e))
                         .for_each(|e| result.push(e))
                 }
-                result.push(Block::Hit(
-                    &src[current_start + start_tag.len()..current_end - end_tag.len()],
-                ));
+                let dyn_src = &src[current_start + start_tag.len()..current_end - end_tag.len()];
+                if replace_hit_skip_tag {
+                    let vec1 = remove_skip_block(dyn_src, start_tag);
+                    vec1.iter()
+                        .flat_map(|e| remove_skip_block(*e, end_tag))
+                        .map(|e| Block::Dynamic(e))
+                        .for_each(|e| result.push(e));
+                } else {
+                    result.push(Block::Dynamic(dyn_src));
+                }
+
                 index = current_end
             } else {
                 if index < src.len() {
@@ -137,30 +150,107 @@ impl Block<'static> {
     }
 }
 
+#[test]
+#[cfg(test)]
+fn test() {
+    println!("{:?}", remove_skip_block(r#"测试测\\"试测试"#, "\""));
+}
+
 pub fn remove_skip_block<'a>(src: &'a str, tag: &str) -> Vec<&'a str> {
     let skip_tag = format!("\\{}", tag);
-    let mut result: Vec<&str> = src.split(&skip_tag).collect();
-    if result.len() > 1 {
-        for index in 0..result.len() - 1 {
-            let current: &str = result.get(index + 1).unwrap();
-            let current_ptr = current.as_ptr();
-            result[index + 1] = unsafe {
-                from_utf8(from_raw_parts(
-                    src.as_ptr().offset(
-                        (current_ptr.offset_from(src.as_ptr()) - (tag.len() as isize)) as isize,
-                    ),
-                    tag.len() + current.len(),
+    let src_ptr = src.as_ptr();
+    let mut result: Vec<&str> = vec![];
+    src.split(&skip_tag).for_each(|e| unsafe {
+        let left_len = e.as_ptr().offset_from(src_ptr);
+        let try_ignore_offset = left_len - 1 - (skip_tag.len() as isize);
+        if left_len > skip_tag.len() as isize {
+            if from_raw_parts(src_ptr.offset(try_ignore_offset), 1)[0] == '\\' as u8 {
+                let data = from_utf8(from_raw_parts(
+                    src_ptr.offset(try_ignore_offset),
+                    e.len() + tag.len() + 2,
                 ))
-                .unwrap()
+                .unwrap();
+                if let Some(last) = result.last_mut() {
+                    *last = from_utf8(from_raw_parts(
+                        last.as_ptr(),
+                        (data.as_ptr().offset_from(last.as_ptr()) + data.len() as isize) as usize,
+                    ))
+                    .unwrap();
+                } else {
+                    result.push(data);
+                }
+            } else {
+                result.push(
+                    from_utf8(from_raw_parts(
+                        src_ptr.offset(try_ignore_offset + 2),
+                        e.len() + tag.len(),
+                    ))
+                    .unwrap(),
+                );
             };
+        } else {
+            result.push(e);
+        };
+    });
+    result
+}
+
+pub fn is_expr(src: &str) -> bool {
+    let chars = src.chars().collect::<Vec<char>>();
+    let first = chars[0];
+    if (('A'..='Z').contains(&first) || ('a'..='z').contains(&first) || first == '_').not() {
+        return false;
+    }
+    for item in chars.iter() {
+        if (('A'..='Z').contains(&item)
+            || ('a'..='z').contains(&item)
+            || ('0'..='9').contains(&item)
+            || *item == '_')
+            .not()
+        {
+            return false;
         }
     }
-    result
+    true
+}
+
+pub fn next_expr(src: &str, skip_unknown: bool) -> Option<(usize, usize)> {
+    let mut start = None;
+    for (index, item) in src.chars().enumerate() {
+        if item == ' ' {
+            if let Some(start) = start {
+                return Some((start, index));
+            } else {
+                continue;
+            }
+        }
+        if ('A'..='Z').contains(&item)
+            || ('a'..='z').contains(&item)
+            || ('0'..='9').contains(&item)
+            || item == '_'
+        {
+            if start == None {
+                start = Some(index)
+            }
+            //是个变量
+        } else {
+            if let Some(start) = start {
+                return Some((start, index));
+            } else {
+                if skip_unknown {
+                    continue;
+                } else {
+                    return None;
+                }
+            }
+        }
+    }
+    None
 }
 
 #[cfg(test)]
 mod test {
-    use crate::utils::str::Block::{Hit, Static};
+    use crate::utils::str::Block::{Dynamic, Static};
     use crate::utils::str::{find, find_block, find_block_skip_ignore, Block};
 
     #[test]
@@ -207,24 +297,24 @@ mod test {
     #[test]
     fn test_split_block() {
         fn split_block_test(src: &str) -> Vec<Block> {
-            Block::new_group(src, "{{", "}}", &vec![("\"", "\""), ("'", "'")])
+            Block::new_group(src, "{{", "}}", &vec![("\"", "\""), ("'", "'")], false)
         }
         assert_eq!(
             split_block_test("hello {{world}}"),
-            vec![Static("hello "), Hit("world")]
+            vec![Static("hello "), Dynamic("world")]
         );
         assert_eq!(
             split_block_test("hello \\{{ {{world}}"),
-            vec![Static("hello "), Static("{{ "), Hit("world")]
+            vec![Static("hello "), Static("{{ "), Dynamic("world")]
         );
 
         assert_eq!(
             split_block_test("hello \\}} {{world}}"),
-            vec![Static("hello "), Static("}} "), Hit("world")]
+            vec![Static("hello "), Static("}} "), Dynamic("world")]
         );
         assert_eq!(
             split_block_test("hello \\}} {{world\\}}}}"),
-            vec![Static("hello "), Static("}} "), Hit("world\\}}")]
+            vec![Static("hello "), Static("}} "), Dynamic("world\\}}")]
         );
     }
 }

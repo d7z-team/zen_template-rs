@@ -1,59 +1,18 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::ops::Not;
 
-use crate::ast::{Expression, Primitive};
+use log::debug;
 
-/// 符号转换
-pub struct ExprSymbol {
-    ///符号
-    symbol: String,
-    /// 原语翻译函数
-    covert: fn(Expression, Expression) -> Primitive,
-}
-
-/// 表达式符号映射表，将相关的表达式转换为原语
-pub fn default_expressions_symbol() -> Vec<ExprSymbol> {
-    let mut result = Vec::new();
-    let mut register = |tag: &str, evolution: fn(Expression, Expression) -> Primitive| {
-        result.push(ExprSymbol {
-            symbol: tag.to_string(),
-            covert: evolution,
-        })
-    };
-    register(".", |e, a| Primitive::new("get", vec![e, a]));
-    register("?:", |e, a| Primitive::new("get_or_default", vec![e, a]));
-    register("?.", |e, a| Primitive::new("get_or_none", vec![e, a]));
-
-    register("*", |e, a| Primitive::new("multi", vec![e, a]));
-    register("/", |e, a| Primitive::new("div", vec![e, a]));
-    register("%", |e, a| Primitive::new("mod", vec![e, a]));
-
-    register("+", |e, a| Primitive::new("add", vec![e, a]));
-    register("-", |e, a| Primitive::new("sub", vec![e, a]));
-
-    register(" is ", |e, a| {
-        Primitive::new(
-            "eq",
-            vec![Expression::ItemDynamic(Primitive::new("type", vec![e])), a],
-        )
-    });
-    register("==", |e, a| Primitive::new("eq", vec![e, a]));
-    register("!=", |e, a| {
-        Primitive::new(
-            "not",
-            vec![Expression::ItemDynamic(Primitive::new("eq", vec![e, a]))],
-        )
-    });
-    register(">=", |e, a| Primitive::new("ge", vec![e, a]));
-    register("<=", |e, a| Primitive::new("le", vec![e, a]));
-    register(">", |e, a| Primitive::new("r_angle", vec![e, a]));
-    register("<", |e, a| Primitive::new("l_angle", vec![e, a]));
-    register("&&", |e, a| Primitive::new("and", vec![e, a]));
-    register("||", |e, a| Primitive::new("or", vec![e, a]));
-
-    result
-}
+use crate::ast::CommandParam::Keywords;
+use crate::ast::TemplateAst::{ItemBranch, ItemCommand};
+use crate::ast::{Branch, CommandParam, TemplateAst};
+use crate::compile::ast_stack::TmplAstStack;
+use crate::err::TemplateError::GenericError;
+use crate::err::TmplResult;
+use crate::utils::str::is_expr;
 
 /// 流程控制参数
+#[derive(Debug)]
 pub enum ParamSyntax {
     /// 关键字标记
     Keywords(String),
@@ -66,73 +25,156 @@ pub enum ParamSyntax {
 }
 
 /// 流程控制关键字和语法标记
-pub struct OperatorTag {
+#[derive(Debug)]
+pub struct CommandSyntax {
     // 操作符标记
-    tag: String,
+    key: String,
     // 操作符语法 (名称 / 表达式)
     syntax: HashMap<String, Vec<ParamSyntax>>,
 }
 
-impl OperatorTag {
-    fn new(tag: &str, syntax: Vec<(&str, Vec<ParamSyntax>)>) -> Self {
-        OperatorTag {
-            tag: tag.to_string(),
+impl CommandSyntax {
+    ///编译表达式
+    pub fn build(&self, src: &str) -> TmplResult<Branch> {
+        if src.starts_with(&self.key).not() {
+            return Err(GenericError(format!(
+                "源码与操作符不匹配：{:?} != {:?}",
+                src, self
+            )));
+        }
+        for (key, param_syntax_arr) in &self.syntax {
+            let mut result: Vec<CommandParam> = vec![];
+            let mut src = src.trim();
+            for param_syntax in param_syntax_arr {
+                match param_syntax {
+                    ParamSyntax::Keywords(key) => {
+                        if src.starts_with(&format!("{} ", key)) {
+                            src = &src[key.len() + 1..];
+                            result.push(Keywords)
+                        } else {
+                            continue;
+                        }
+                    }
+                    ParamSyntax::Assignment => {
+                        if let Some(end) = src.find("=") {
+                            let param = &src[..end].trim();
+                            let params = if param.starts_with("(") && param.ends_with(")") {
+                                param.split(",").collect::<Vec<&str>>()
+                            } else {
+                                vec![*param]
+                            };
+                            if let Some(inv_expr) = params.iter().find(|e| is_expr(**e).not()) {
+                                debug!("变量 {:?} 格式错误！", inv_expr);
+                                continue;
+                            }
+                            //添加变量
+                            result.push(CommandParam::Assignment(
+                                params.iter().map(|e| e.to_string()).collect(),
+                            ))
+                        } else {
+                            continue;
+                        }
+                    }
+                    ParamSyntax::Expression => {}
+                    ParamSyntax::StaticValue => {}
+                }
+            }
+            return Ok(Branch::new(&key.as_str(), result));
+        }
+        return Err(GenericError(format!(
+            "表达式 {} 未找到匹配的解析规则！",
+            src
+        )));
+    }
+    pub fn new(tag: &str, syntax: Vec<(&str, Vec<ParamSyntax>)>) -> Self {
+        CommandSyntax {
+            key: tag.to_string(),
             syntax: syntax
                 .into_iter()
                 .map(|(k, v)| (k.to_string(), v))
                 .collect(),
         }
     }
-}
-
-pub enum ChildStageType {
-    Single(OperatorTag),
-    Multiple(OperatorTag),
-}
-
-impl ChildStageType {
-    pub fn get_tag(&self) -> &str {
-        match self {
-            ChildStageType::Single(e) => &e.tag,
-            ChildStageType::Multiple(e) => &e.tag,
-        }
+    pub fn to_stage(self, bind: Vec<StageConstraint>) -> ChildStageSyntax {
+        ChildStageSyntax::new(self, bind)
+    }
+    pub fn new_empty_param(tag: &str) -> Self {
+        Self::new(tag, vec![])
     }
 }
 
-/// 带子流程的操作运算
-pub struct SyntaxOperatorBlock {
-    /// 开始关键字
-    pub start: OperatorTag,
-    /// 子分支
-    pub child_state: Vec<ChildStageType>,
-    /// 结束关键字
-    pub end: OperatorTag,
+#[derive(Debug)]
+pub struct ChildStageSyntax {
+    tag: CommandSyntax,
+    bind: HashSet<StageConstraint>,
 }
 
-impl SyntaxOperatorBlock {
-    pub fn new(start: OperatorTag, child: Vec<ChildStageType>, end: OperatorTag) -> Self {
-        SyntaxOperatorBlock {
+impl ChildStageSyntax {
+    pub fn new(tag: CommandSyntax, bind: Vec<StageConstraint>) -> Self {
+        ChildStageSyntax {
+            tag,
+            bind: bind.into_iter().collect(),
+        }
+    }
+    pub fn new_no_bind(tag: CommandSyntax) -> Self {
+        Self::new(tag, vec![])
+    }
+}
+
+#[derive(Debug, Eq, PartialOrd, PartialEq, Hash)]
+pub enum StageConstraint {
+    SINGLE,
+}
+
+/// 带子流程的操作运算
+#[derive(Debug)]
+pub struct BranchSyntax {
+    /// 开始关键字
+    pub start: CommandSyntax,
+    /// 子分支
+    pub child_state: Vec<ChildStageSyntax>,
+    /// 结束关键字
+    pub end: CommandSyntax,
+}
+
+impl BranchSyntax {
+    pub fn new(start: CommandSyntax, child: Vec<ChildStageSyntax>, end: CommandSyntax) -> Self {
+        BranchSyntax {
             start,
             child_state: child,
             end,
         }
     }
-    pub fn get_matched_type(&self, tag: &str) -> Option<&ChildStageType> {
+    pub fn get_matched_type(&self, tag: &str) -> Option<&ChildStageSyntax> {
         self.child_state
             .iter()
-            .find(|e| tag.starts_with(e.get_tag()))
+            .find(|e| tag.starts_with(&e.tag.key))
     }
 }
 
-/// 流程操作符分类
-pub enum Operator {
-    /// 流程分支
-    Branch(SyntaxOperatorBlock, Vec<String>, bool),
-    /// 流程控制命令
-    Command(OperatorTag, Vec<String>),
+#[derive(Debug)]
+pub struct BranchSyntaxWrapper {
+    pub syntax: BranchSyntax,
+    pub scopes: Vec<String>,
+    pub auto_loop: bool,
 }
 
-impl Operator {
+#[derive(Debug)]
+pub struct CommandSyntaxWrapper {
+    pub syntax: CommandSyntax,
+    pub scope: Vec<String>,
+}
+
+/// 流程操作符分类
+#[derive(Debug)]
+pub enum OperatorSyntax {
+    /// 流程分支
+    Branch(BranchSyntaxWrapper),
+    /// 流程控制命令
+    Command(CommandSyntaxWrapper),
+}
+
+impl OperatorSyntax {
     ///
     ///
     /// 创建新的流程
@@ -145,112 +187,47 @@ impl Operator {
     ///
     /// returns: Operator
     ///
-    pub fn new_branch(block: SyntaxOperatorBlock, scope: Vec<&str>, loop_state: bool) -> Self {
-        Operator::Branch(
-            block,
-            scope.iter().map(|e| e.to_string()).collect(),
-            loop_state,
-        )
+    pub fn new_branch(block: BranchSyntax, scope: Vec<&str>, loop_branch: bool) -> Self {
+        OperatorSyntax::Branch(BranchSyntaxWrapper {
+            syntax: block,
+            scopes: scope.iter().map(|e| e.to_string()).collect(),
+            auto_loop: loop_branch,
+        })
     }
-    pub fn new_command(tag: OperatorTag, scope: Vec<&str>) -> Self {
-        Operator::Command(tag, scope.iter().map(|e| e.to_string()).collect())
+    pub fn new_command(tag: CommandSyntax, scope: Vec<&str>) -> Self {
+        OperatorSyntax::Command(CommandSyntaxWrapper {
+            syntax: tag,
+            scope: scope.iter().map(|e| e.to_string()).collect(),
+        })
     }
-    pub(crate) fn get_start_tag(&self) -> &str {
+    pub fn get_start_tag(&self) -> &str {
         match self {
-            Operator::Branch(tag, _, _) => &tag.start.tag,
-            Operator::Command(tag, _) => &tag.tag,
+            OperatorSyntax::Branch(item) => &item.syntax.start.key,
+            OperatorSyntax::Command(item) => &item.syntax.key,
         }
     }
-}
-
-pub fn default_state() -> Vec<Operator> {
-    let mut result = Vec::new();
-    result.push(Operator::new_branch(
-        SyntaxOperatorBlock::new(
-            OperatorTag::new(
-                "for",
-                vec![(
-                    "default",
-                    vec![
-                        ParamSyntax::Assignment,
-                        ParamSyntax::Keywords("in".to_string()),
-                        ParamSyntax::Expression,
-                    ],
-                )],
+    pub fn get_scope(&self) -> &Vec<String> {
+        match self {
+            OperatorSyntax::Branch(item) => &item.scopes,
+            OperatorSyntax::Command(item) => &item.scope,
+        }
+    }
+    pub fn check_scope(&self, stack: &TmplAstStack) -> TmplResult<()> {
+        stack
+            .check_scope(self.get_scope())
+            .map_err(|e| GenericError(format!("解析{:?} 失败，{}", self, e)))
+    }
+    ///将原始块
+    pub fn build_ast(&self, start: &str) -> TmplResult<TemplateAst> {
+        Ok(match self {
+            OperatorSyntax::Branch(b) => ItemBranch(
+                b.syntax.start.key.to_string(),
+                vec![b.syntax.start.build(start)?],
+                b.auto_loop,
             ),
-            vec![],
-            OperatorTag::new("end-for", vec![]),
-        ),
-        vec![],
-        true,
-    ));
-    result.push(Operator::new_branch(
-        SyntaxOperatorBlock::new(
-            OperatorTag::new("switch", vec![("default", vec![ParamSyntax::Expression])]),
-            vec![
-                ChildStageType::Multiple(OperatorTag::new(
-                    "case",
-                    vec![("default", vec![ParamSyntax::StaticValue])],
-                )),
-                ChildStageType::Single(OperatorTag::new("default", vec![])),
-            ],
-            OperatorTag::new("end-switch", vec![]),
-        ),
-        vec![],
-        false,
-    ));
-    //if
-    result.push(Operator::new_branch(
-        SyntaxOperatorBlock::new(
-            OperatorTag::new(
-                "if",
-                vec![
-                    ("default", vec![ParamSyntax::Expression]),
-                    (
-                        "let",
-                        vec![ParamSyntax::Assignment, ParamSyntax::Expression],
-                    ),
-                ],
-            ),
-            vec![
-                ChildStageType::Multiple(OperatorTag::new(
-                    "else-if",
-                    vec![
-                        ("default", vec![ParamSyntax::Expression]),
-                        (
-                            "let",
-                            vec![ParamSyntax::Assignment, ParamSyntax::Expression],
-                        ),
-                    ],
-                )),
-                ChildStageType::Single(OperatorTag::new("else", vec![])),
-            ],
-            OperatorTag::new("end-if", vec![]),
-        ),
-        vec![],
-        false,
-    ));
-    result.push(Operator::new_command(
-        OperatorTag::new("include", vec![("default", vec![ParamSyntax::Expression])]),
-        vec![],
-    ));
-    result.push(Operator::new_command(
-        OperatorTag::new(
-            "let",
-            vec![(
-                "default",
-                vec![ParamSyntax::Assignment, ParamSyntax::Expression],
-            )],
-        ),
-        vec![],
-    ));
-    result.push(Operator::new_command(
-        OperatorTag::new("break", vec![]),
-        vec!["loop", "for"],
-    ));
-    result.push(Operator::new_command(
-        OperatorTag::new("continue", vec![]),
-        vec!["loop", "for"],
-    ));
-    result
+            OperatorSyntax::Command(c) => {
+                ItemCommand(c.syntax.key.to_string(), c.syntax.build(start)?.params)
+            }
+        })
+    }
 }
