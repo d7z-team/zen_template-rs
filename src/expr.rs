@@ -62,7 +62,7 @@ impl Primitive {
 
 impl ExpressionManager {
     fn compile(&self, expr_str: &str) -> TmplResult<Expression> {
-        let vec1 = Block::new_group(expr_str, "\"", "\"", &vec![("'", "'")], true);
+        let vec1 = Block::new_group(expr_str, "\"", "\"", &vec![("'", "'")]);
         println!("{:?}", vec1);
         todo!()
     }

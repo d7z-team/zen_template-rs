@@ -25,7 +25,6 @@ impl Compile {
             &self.config.block_symbol.0,
             &self.config.block_symbol.1,
             &vec![("'", "'"), ("\"", "\"")],
-            false,
         );
         // 将静态数据加入到栈中
         for src_block in block_arr.iter() {
