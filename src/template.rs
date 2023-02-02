@@ -102,9 +102,7 @@ pub fn default_expressions_symbol() -> Vec<ExprSymbolCovert> {
             covert: evolution,
         })
     };
-    register(".", |e, a| Primitive::new("get", vec![e, a]));
-    register("?:", |e, a| Primitive::new("get_or_default", vec![e, a]));
-    register("?.", |e, a| Primitive::new("get_or_none", vec![e, a]));
+    register("?:", |e, a| Primitive::new("get_or", vec![e, a]));
 
     register("*", |e, a| Primitive::new("multi", vec![e, a]));
     register("/", |e, a| Primitive::new("div", vec![e, a]));
@@ -119,6 +117,7 @@ pub fn default_expressions_symbol() -> Vec<ExprSymbolCovert> {
             vec![Expression::ItemDynamic(Primitive::new("type", vec![e])), a],
         )
     });
+    register(" in ", |e, a| Primitive::new("in", vec![e, a]));
     register("==", |e, a| Primitive::new("eq", vec![e, a]));
     register("!=", |e, a| {
         Primitive::new(

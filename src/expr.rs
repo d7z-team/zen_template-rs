@@ -86,7 +86,7 @@ mod test {
     fn test() {
         let manager = ExpressionManager::default();
         manager
-            .compile(r#"这是一段测试的文本 "里面\\" 外面"#)
+            .compile(r#"这是一段测试的文本 "里面" 外面"#)
             .unwrap();
     }
 }
