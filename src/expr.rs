@@ -1,10 +1,9 @@
 use std::collections::HashMap;
-use std::fmt::format;
 use std::ops::Not;
 
 use crate::err::TmplResult;
-use crate::expr::DataTag::Symbol;
-use crate::expr::ExprCompileData::{Fixed, Original, Tag};
+use crate::expr::DataTag::{Static, Symbol};
+use crate::expr::ExprCompileData::{Original, Tag};
 use crate::template::default_expressions_symbol;
 use crate::utils::str::{find, Block};
 use crate::value::TmplValue;
@@ -39,7 +38,16 @@ pub enum Expression {
     ///静态数据，可直接输出
     ItemStatic(TmplValue),
     ///动态表达式，需要结合原语计算
-    ItemDynamic(Primitive),
+    ItemDynamic(DynamicType),
+}
+
+/// 动态表达式类型
+#[derive(Debug)]
+pub enum DynamicType {
+    ///上下文变量
+    Variable(String),
+    ///原语
+    Primitive(Primitive),
 }
 
 /// 表达式转换的原语
@@ -62,17 +70,18 @@ impl Primitive {
 
 #[derive(Debug)]
 enum ExprCompileData<'a> {
-    //确定的表达式
-    Fixed(Expression),
     //带标记的处理数据
     Tag(&'a str, DataTag),
     //不带标记的原始数据
     Original(&'a str),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum DataTag {
+    //标记为符号
     Symbol,
+    ///标记为最终值
+    Static,
 }
 
 // TODO: 完成表达式计算算法
@@ -80,26 +89,47 @@ enum DataTag {
 // TODO: 剩下的Original应该全是取变量
 impl ExpressionManager {
     fn compile(&self, expr_str: &str) -> TmplResult<Expression> {
-        let mut src = Self::parse_str(expr_str);
-        src = self.parse_symbols(src);
+        let mut src = Self::parse_str(expr_str); // 提取表达式的原始字符串
+        src = self.parse_symbols(src); //将所有符号进行拆分
         println!(
             "{}",
             src.iter()
                 .map(|e| {
                     match e {
-                        Fixed(e) => format!("\'{:?}\'", e),
-                        Tag(e, _) => e.to_string(),
-                        Original(e) => format!("\"{}\"", e),
+                        Tag(e, tag) => match tag {
+                            Symbol => {
+                                format!("`{}`", e.to_string())
+                            }
+                            Static => format!("'{}'", e.to_string()),
+                        },
+                        Original(e) => format!("{}", e),
                     }
                 })
                 .collect::<String>()
         );
+        for (i, v) in src.iter().enumerate() {
+            if let Tag(value, Symbol) = v {
+                //校验符号合法性
+                let last = src.get(i - 1);
+                let next = src.get(i + 1);
+                if *value == "(" {
+                    //符号开始
+                    if let Some(Tag(_, Symbol)) = last {
+                        //左方为符号则表明这是一个优先级定义符号，
+                    } else if let Some(Original(_)) = last {
+                        //左方为变量则表明这是一个原语的的一部分
+                    } else {
+                    }
+                }
+            }
+        }
         todo!()
     }
     /// 替换单个字符
     fn parse_symbols_once<'a, 'b: 'a>(
         input: &mut Vec<ExprCompileData<'a>>,
         symbol: &'b str,
+        bind_tag: DataTag,
     ) -> Vec<ExprCompileData<'a>> {
         let mut content = vec![];
         loop {
@@ -111,7 +141,7 @@ impl ExpressionManager {
                     loop {
                         if let Some(index) = find(src, last_start, symbol) {
                             child_content.push(Original(&src[last_start..index]));
-                            child_content.push(Tag(symbol, Symbol));
+                            child_content.push(Tag(symbol, bind_tag));
                             last_start = index + symbol.len();
                         } else {
                             child_content.push(Original(&src[last_start..]));
@@ -137,10 +167,9 @@ impl ExpressionManager {
         self.symbols
             .iter()
             .map(|e| e.symbol.as_str())
-            .for_each(|s| src = Self::parse_symbols_once(&mut src, s));
-        // src = Self::parse_symbols_once(&mut src, "."); //预定义规则
-        src = Self::parse_symbols_once(&mut src, "("); //预定义规则
-        src = Self::parse_symbols_once(&mut src, ")"); //预定义规则
+            .for_each(|s| src = Self::parse_symbols_once(&mut src, s, Symbol));
+        src = Self::parse_symbols_once(&mut src, "(", Symbol); //预定义规则
+        src = Self::parse_symbols_once(&mut src, ")", Symbol); //预定义规则
         src.into_iter()
             .map(|e| match e {
                 Original(item) => Original(item.trim()),
@@ -160,15 +189,11 @@ impl ExpressionManager {
                 Block::Static(d) => Block::new_group(d, "'", "'", &vec![("\"", "\"")])
                     .into_iter()
                     .map(|e| match e {
-                        Block::Dynamic(dy) => {
-                            Fixed(Expression::ItemStatic(TmplValue::Text(dy.to_string())))
-                        }
+                        Block::Dynamic(dy) => Tag(dy, Static),
                         Block::Static(st) => Original(st),
                     })
                     .collect(),
-                Block::Dynamic(s) => vec![Fixed(Expression::ItemStatic(TmplValue::Text(
-                    s.to_string(),
-                )))],
+                Block::Dynamic(s) => vec![Tag(s, Static)],
             })
             .collect::<Vec<ExprCompileData>>()
     }
@@ -191,7 +216,7 @@ mod test {
     fn test() {
         let manager = ExpressionManager::default();
         manager
-            .compile(r#"kotlin.lang .name ?: kotlin . name ?: name "#)
+            .compile(r#"kotlin.lang.name ?: kotlin.name ?: name ?: '没有'"#)
             .unwrap();
     }
 }

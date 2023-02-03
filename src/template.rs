@@ -114,7 +114,10 @@ pub fn default_expressions_symbol() -> Vec<ExprSymbolCovert> {
     register(" is ", |e, a| {
         Primitive::new(
             "eq",
-            vec![Expression::ItemDynamic(Primitive::new("type", vec![e])), a],
+            vec![
+                Expression::ItemDynamic(DynamicType::Primitive(Primitive::new("type", vec![e]))),
+                a,
+            ],
         )
     });
     register(" in ", |e, a| Primitive::new("in", vec![e, a]));
@@ -122,7 +125,9 @@ pub fn default_expressions_symbol() -> Vec<ExprSymbolCovert> {
     register("!=", |e, a| {
         Primitive::new(
             "not",
-            vec![Expression::ItemDynamic(Primitive::new("eq", vec![e, a]))],
+            vec![Expression::ItemDynamic(DynamicType::Primitive(
+                Primitive::new("eq", vec![e, a]),
+            ))],
         )
     });
     register(">=", |e, a| Primitive::new("ge", vec![e, a]));

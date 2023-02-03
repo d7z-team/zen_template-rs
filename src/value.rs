@@ -21,6 +21,7 @@ pub enum TmplValue {
     Bool(bool),
     Array(Vec<TmplValue>),
     Table(HashMap<String, TmplValue>),
+    //仅用于参与计算
     None,
 }
 

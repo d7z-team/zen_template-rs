@@ -31,7 +31,7 @@ impl Compile {
             //当前块为关键字
             if let Block::Dynamic(src) = *src_block {
                 //栈内存在未结束分支对象,需要考虑是否为分支内子分支或分支结束操作符
-                if let Some(branch) = stack.get_stack_top_operator(&self.config.operators)? {
+                if let Some(_branch) = stack.get_stack_top_operator(&self.config.operators)? {
                     // branch
                     // branch.syntax.child_state
                 } else {

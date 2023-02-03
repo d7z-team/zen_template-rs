@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use crate::expr::{ExprSymbolCovert, ExpressionManager};
+use crate::expr::ExpressionManager;
 use crate::syntax::OperatorSyntax;
-use crate::template::{default_expressions_symbol, default_state};
+use crate::template::default_state;
 use crate::ValueFormatter;
 
 /// 模板配置项
