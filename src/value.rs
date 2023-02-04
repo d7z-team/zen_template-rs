@@ -25,6 +25,56 @@ pub enum TmplValue {
     None,
 }
 
+impl PartialEq for TmplValue {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            TmplValue::Float(_) => false,
+            TmplValue::Number(e) => {
+                if let TmplValue::Number(oe) = other {
+                    e.eq(oe)
+                } else {
+                    false
+                }
+            }
+            TmplValue::Text(e) => {
+                if let TmplValue::Text(oe) = other {
+                    e.eq(oe)
+                } else {
+                    false
+                }
+            }
+            TmplValue::Bool(e) => {
+                if let TmplValue::Bool(oe) = other {
+                    e.eq(oe)
+                } else {
+                    false
+                }
+            }
+            TmplValue::Array(e) => {
+                if let TmplValue::Array(oe) = other {
+                    e.eq(oe)
+                } else {
+                    false
+                }
+            }
+            TmplValue::Table(e) => {
+                if let TmplValue::Table(oe) = other {
+                    e.eq(oe)
+                } else {
+                    false
+                }
+            }
+            TmplValue::None => {
+                if let TmplValue::None = other {
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+    }
+}
+
 impl ToString for TmplValue {
     fn to_string(&self) -> String {
         match self {

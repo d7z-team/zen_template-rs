@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::ops::Not;
 
 use crate::err::TmplResult;
-use crate::expr::DataTag::{Symbol, Value, Variable};
+use crate::expr::DataTag::{ItemPrimitive, ItemSymbol, ItemValue, ItemVariable};
 use crate::expr::ExprCompileData::{Original, Tag};
 use crate::template::default_expressions_symbol;
 use crate::utils::str::{find, Block};
@@ -76,16 +76,16 @@ enum ExprCompileData<'a> {
     Original(&'a str),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum DataTag {
     //标记为符号
-    Symbol(String),
+    ItemSymbol(String),
     ///标记为最终值
-    Value(TmplValue),
+    ItemValue(TmplValue),
     ///变量
-    Variable(Vec<String>),
+    ItemVariable(Vec<String>),
     ///原语
-    Primitive(String, Vec<DataTag>),
+    ItemPrimitive(String, Vec<DataTag>),
 }
 
 // TODO: 完成表达式计算算法
@@ -93,45 +93,111 @@ enum DataTag {
 // TODO: 剩下的Original应该全是取变量
 impl ExpressionManager {
     fn compile(&self, expr_str: &str) -> TmplResult<Expression> {
-        let mut src = self.parse_symbols(Self::parse_str(expr_str)); // 提取表达式的原始字符串
-        for (i, v) in src.iter().enumerate() {
-            if let Symbol(value) = v {
-                //校验符号合法性
-                let next = src.get(i + 1);
-                if *value == "(" {
-                    //符号开始
-                    if let Some(Symbol(item)) = next {
-                        //左方为符号则表明这是一个优先级定义符号，
-                    } else if let Some(Variable(var)) = next {
-                        //左方为变量则表明这是一个原语的的一部分
-                    } else {
-                    }
+        let src = self.parse_symbols(Self::parse_str(expr_str));
+        let mut src = Self::parse_group(src); // 提取表达式的原始字符串
+        src = Self::covert_primitive(src);
+        println!("{}", expr_str);
+        println!("{}", ItemPrimitive("root".to_string(), src).to_string());
+        Ok(Expression::ItemStatic(TmplValue::Float(1.2)))
+    }
+    fn covert_primitive(src: Vec<DataTag>) -> Vec<DataTag> {
+        let mut iter = src.into_iter();
+        let mut _current = iter.next();
+        let mut result = vec![];
+
+        loop {
+            let mut current = _current.unwrap();
+            if let ItemPrimitive(name, child) = current {
+                current = ItemPrimitive(name, Self::covert_primitive(child));
+            }
+            let mut next = iter.next();
+            if let ItemSymbol(item) = current {
+                result.push(ItemSymbol(item));
+            } else {
+                if let Some(ItemPrimitive(name, mut child)) = next {
+                    child.insert(0, current);
+                    result.push(ItemPrimitive(name, child));
+
+                    next = iter.next();
+                } else {
+                    result.push(current);
                 }
             }
+            _current = next;
+            if _current.is_none() {
+                break;
+            }
         }
-        println!("{:#?}", src);
-        println!(
-            "{}",
-            src.iter()
-                .map(|e| match e {
-                    Symbol(sy) => {
-                        format!(" {} ", sy)
+        result
+    }
+    ///解析括号是否为分组或者原语
+    fn parse_group(src: Vec<DataTag>) -> Vec<DataTag> {
+        let mut iter = src.iter();
+        let mut _current = iter.next();
+        let mut result = vec![];
+        let mut stack: Vec<(String, Vec<DataTag>)> = vec![];
+        if Some(&ItemSymbol("(".to_string())) == _current {
+            stack.push(("_group".to_string(), vec![]));
+            _current = iter.next();
+        }
+        loop {
+            let current = _current.unwrap();
+            let mut next = iter.next();
+
+            let mut push_other = |data: DataTag| {
+                if stack.is_empty() {
+                    result.push(data)
+                } else {
+                    stack.last_mut().unwrap().1.push(data)
+                }
+            };
+
+            if &ItemSymbol(")".to_string()) == current {
+                if stack.is_empty() {
+                    panic!()
+                } else {
+                    let last = stack.remove(stack.len() - 1);
+                    let tag = ItemPrimitive(last.0, last.1);
+                    if stack.is_empty() {
+                        result.push(tag)
+                    } else {
+                        stack.last_mut().unwrap().1.push(tag)
                     }
-                    Value(st) => {
-                        format!("'{}'", st.to_string())
+                } //关闭字符
+            } else if Some(&ItemSymbol("(".to_string())) == next {
+                if let ItemSymbol(syn) = current {
+                    //符号则表明为group
+                    push_other(ItemSymbol(syn.to_string())); //插入当前数据
+                    stack.push(("_group".to_string(), vec![])); //新建
+                } else if let ItemVariable(var) = current {
+                    // 否则为原语
+                    let mut new_var = Clone::clone(var);
+                    let key = new_var.remove(new_var.len() - 1);
+                    if new_var.is_empty().not() {
+                        if new_var.len() == 1 {
+                            push_other(match TmplValue::from(&new_var[0]) {
+                                //处理参数作为数字的情况
+                                TmplValue::Number(n) => ItemValue(TmplValue::Number(n)),
+                                _ => ItemVariable(new_var),
+                            })
+                        } else {
+                            push_other(ItemVariable(new_var))
+                        }
                     }
-                    Variable(va) => {
-                        va.iter()
-                            .map(|e| e.as_str())
-                            .collect::<Vec<&str>>()
-                            .join(".")
-                            .to_string()
-                    }
-                    _ => "".to_string(),
-                })
-                .collect::<String>()
-        );
-        todo!()
+                    stack.push((key, vec![]));
+                } else {
+                    panic!()
+                }
+                next = iter.next(); //跳过括号
+            } else {
+                push_other(Clone::clone(current))
+            }
+            if next.is_none() {
+                break;
+            }
+            _current = next
+        }
+        result
     }
 
     /// 替换单个字符
@@ -149,7 +215,7 @@ impl ExpressionManager {
                     loop {
                         if let Some(index) = find(src, last_start, symbol) {
                             child_content.push(Original(&src[last_start..index]));
-                            child_content.push(Tag(Symbol(symbol.to_string())));
+                            child_content.push(Tag(ItemSymbol(symbol.to_string())));
                             last_start = index + symbol.len();
                         } else {
                             child_content.push(Original(&src[last_start..]));
@@ -179,10 +245,10 @@ impl ExpressionManager {
             .map(|e| match e {
                 Original(data) => match TmplValue::from(data.trim()) {
                     //此时只剩下变量与静态数据
-                    TmplValue::Float(f) => Value(TmplValue::Float(f)),
-                    TmplValue::Number(n) => Value(TmplValue::Number(n)),
-                    TmplValue::Bool(b) => Value(TmplValue::Bool(b)),
-                    _ => Variable(
+                    TmplValue::Float(f) => ItemValue(TmplValue::Float(f)),
+                    TmplValue::Number(n) => ItemValue(TmplValue::Number(n)),
+                    TmplValue::Bool(b) => ItemValue(TmplValue::Bool(b)),
+                    _ => ItemVariable(
                         data.trim()
                             .split(".")
                             .filter(|e| e.trim().is_empty().not())
@@ -193,7 +259,7 @@ impl ExpressionManager {
                 Tag(e) => e,
             })
             .filter(|e| match e {
-                Variable(v) => v.is_empty().not(),
+                ItemVariable(v) => v.is_empty().not(),
                 _ => true,
             })
             .collect()
@@ -206,13 +272,43 @@ impl ExpressionManager {
                 Block::Static(d) => Block::new_group(d, "'", "'", &vec![("\"", "\"")])
                     .into_iter()
                     .map(|e| match e {
-                        Block::Dynamic(dy) => Tag(Value(TmplValue::Text(dy.to_string()))),
+                        Block::Dynamic(dy) => Tag(ItemValue(TmplValue::Text(dy.to_string()))),
                         Block::Static(st) => Original(st),
                     })
                     .collect(),
-                Block::Dynamic(s) => vec![Tag(Value(TmplValue::Text(s.to_string())))],
+                Block::Dynamic(s) => vec![Tag(ItemValue(TmplValue::Text(s.to_string())))],
             })
             .collect::<Vec<ExprCompileData>>()
+    }
+}
+impl ToString for DataTag {
+    fn to_string(&self) -> String {
+        match self {
+            ItemSymbol(sy) => {
+                format!(" `{}` ", sy)
+            }
+            ItemValue(st) => {
+                format!("'{}'", st.to_string())
+            }
+            ItemVariable(va) => va
+                .iter()
+                .map(|e| e.as_str())
+                .collect::<Vec<&str>>()
+                .join(".")
+                .to_string(),
+
+            ItemPrimitive(name, child) => {
+                format!(
+                    " #{}( {} )",
+                    name,
+                    child
+                        .iter()
+                        .map(|e| e.to_string())
+                        .collect::<Vec<String>>()
+                        .join(",")
+                )
+            }
+        }
     }
 }
 
@@ -233,7 +329,8 @@ mod test {
     fn test() {
         let manager = ExpressionManager::default();
         manager
-            .compile(r#"(kotlin.lang.get('name') ?: kotlin .name ?: name ?: '没有').to_int() + 12 + 21.32 "#)
-            .unwrap();
+            .compile(r#"(kotlin.lang.get('name') ?: kotlin.name ?: name ?: '没有').to_int() + 12.to_str() + 21.32 "#);
+
+        manager.compile(r#"1 + (2 * 3) / 4 == 12.to_str()"#);
     }
 }
