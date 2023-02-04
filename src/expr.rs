@@ -21,7 +21,7 @@ pub struct ExprSymbolCovert {
     ///符号
     pub symbol: String,
     /// 原语翻译函数
-    pub covert: fn(Expression, Expression) -> Primitive,
+    pub covert: fn(DataTag, DataTag) -> DataTag,
 }
 
 ///原语渲染方案
@@ -77,7 +77,7 @@ enum ExprCompileData<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-enum DataTag {
+pub enum DataTag {
     //标记为符号
     ItemSymbol(String),
     ///标记为最终值
@@ -96,10 +96,36 @@ impl ExpressionManager {
         let src = self.parse_symbols(Self::parse_str(expr_str));
         let mut src = Self::parse_group(src); // 提取表达式的原始字符串
         src = Self::covert_primitive(src);
+        src = self.covert_symbol(src)?;
         println!("{}", expr_str);
         println!("{}", ItemPrimitive("root".to_string(), src).to_string());
         Ok(Expression::ItemStatic(TmplValue::Float(1.2)))
     }
+
+    ///翻译表达式
+    fn covert_symbol(&self, src: Vec<DataTag>) -> TmplResult<Vec<DataTag>> {
+        let mut result = src;
+        for symbol in &self.symbols {
+            result = Self::covert_symbol_once(symbol, result)?
+        }
+        Ok(result)
+    }
+    fn covert_symbol_once(
+        covert: &ExprSymbolCovert,
+        src: Vec<DataTag>,
+    ) -> TmplResult<Vec<DataTag>> {
+        let result = vec![];
+        let mut iter = src.iter();
+        loop {
+            let option = iter.next();
+            println!("{:?} {:?}", option, iter.next());
+            if option.is_none() {
+                break;
+            }
+        }
+        Ok(result)
+    }
+    ///翻译原语
     fn covert_primitive(src: Vec<DataTag>) -> Vec<DataTag> {
         let mut iter = src.into_iter();
         let mut _current = iter.next();
@@ -107,17 +133,17 @@ impl ExpressionManager {
 
         loop {
             let mut current = _current.unwrap();
+            let mut next = iter.next();
+
             if let ItemPrimitive(name, child) = current {
                 current = ItemPrimitive(name, Self::covert_primitive(child));
             }
-            let mut next = iter.next();
             if let ItemSymbol(item) = current {
                 result.push(ItemSymbol(item));
             } else {
                 if let Some(ItemPrimitive(name, mut child)) = next {
                     child.insert(0, current);
                     result.push(ItemPrimitive(name, child));
-
                     next = iter.next();
                 } else {
                     result.push(current);
@@ -137,7 +163,7 @@ impl ExpressionManager {
         let mut result = vec![];
         let mut stack: Vec<(String, Vec<DataTag>)> = vec![];
         if Some(&ItemSymbol("(".to_string())) == _current {
-            stack.push(("_group".to_string(), vec![]));
+            stack.push(("group".to_string(), vec![]));
             _current = iter.next();
         }
         loop {
@@ -299,7 +325,7 @@ impl ToString for DataTag {
 
             ItemPrimitive(name, child) => {
                 format!(
-                    " #{}( {} )",
+                    "#{}({})",
                     name,
                     child
                         .iter()
@@ -328,9 +354,10 @@ mod test {
     #[test]
     fn test() {
         let manager = ExpressionManager::default();
-        manager
-            .compile(r#"(kotlin.lang.get('name') ?: kotlin.name ?: name ?: '没有').to_int() + 12.to_str() + 21.32 "#);
+        // manager
+        //     .compile(r#"(kotlin.lang.get('name') ?: kotlin.name ?: name ?: '没有').to_int() + 12.to_str() + 21.32 "#);
 
-        manager.compile(r#"1 + (2 * 3) / 4 == 12.to_str()"#);
+        manager.compile(r#"1 + 2 + 3 + 4"#);
+        // manager.compile(r#"1 + (2 * 3) / 4 == 12.to_str()"#);
     }
 }
