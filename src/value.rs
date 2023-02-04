@@ -50,12 +50,12 @@ impl ToString for TmplValue {
 }
 
 impl TmplValue {
-    pub fn from(src: &str) -> TmplResult<TmplValue> {
+    pub fn from(src: &str) -> TmplValue {
         src.parse::<bool>()
             .map(|e| TmplValue::Bool(e))
             .or_else(|_| src.parse::<i64>().map(|e| TmplValue::Number(e)))
             .or_else(|_| src.parse::<f64>().map(|e| TmplValue::Float(e)))
-            .or_else(|_| Ok(TmplValue::Text(src.to_string())))
+            .unwrap_or(TmplValue::Text(src.to_string()))
     }
 
     #[cfg(any(feature = "json", test))]
@@ -134,19 +134,19 @@ mod test {
     #[test]
     fn test_from() {
         assert_eq!(
-            TmplValue::from("false").unwrap().to_string(),
+            TmplValue::from("false").to_string(),
             TmplValue::Bool(false).to_string()
         );
         assert_eq!(
-            TmplValue::from("12.33").unwrap().to_string(),
+            TmplValue::from("12.33").to_string(),
             TmplValue::Float(12.33).to_string()
         );
         assert_eq!(
-            TmplValue::from("15").unwrap().to_string(),
+            TmplValue::from("15").to_string(),
             TmplValue::Number(15).to_string()
         );
         assert_eq!(
-            TmplValue::from("text").unwrap().to_string(),
+            TmplValue::from("text").to_string(),
             TmplValue::Text("text".to_string()).to_string()
         );
     }
