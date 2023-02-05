@@ -7,7 +7,7 @@ use crate::ast::TemplateAst;
 use crate::ast::TemplateAst::ItemBranch;
 use crate::err::TemplateError::{ExistsError, GenericError};
 use crate::err::TmplResult;
-use crate::expr::Expression::ItemStatic;
+use crate::expr::Expression::ItemValue;
 use crate::syntax::{BranchSyntaxWrapper, OperatorSyntax};
 use crate::value::TmplValue;
 
@@ -50,11 +50,11 @@ impl TmplAstStack {
                     self.child_stack
                 )))?
             };
-            if let ItemExpr(ItemStatic(TmplValue::Text(new))) = node {
-                if let Some(ItemExpr(ItemStatic(TmplValue::Text(old)))) = &mut add.last_mut() {
+            if let ItemExpr(ItemValue(TmplValue::Text(new))) = node {
+                if let Some(ItemExpr(ItemValue(TmplValue::Text(old)))) = &mut add.last_mut() {
                     old.push_str(&new)
                 } else {
-                    add.push(ItemExpr(ItemStatic(TmplValue::Text(new))))
+                    add.push(ItemExpr(ItemValue(TmplValue::Text(new))))
                 }
             } else {
                 add.push(node)

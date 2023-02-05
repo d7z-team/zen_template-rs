@@ -96,68 +96,68 @@ pub fn default_state() -> Vec<OperatorSyntax> {
 /// 表达式符号映射表，将相关的表达式转换为原语
 pub fn default_expressions_symbol() -> Vec<ExprSymbolCovert> {
     let mut result = Vec::new();
-    let mut register = |tag: &str, evolution: fn(DataTag, DataTag) -> DataTag| {
+    let mut register = |tag: &str, evolution: fn(Expression, Expression) -> Expression| {
         result.push(ExprSymbolCovert {
             symbol: tag.to_string(),
             covert: evolution,
         })
     };
     register("?:", |e, a| {
-        DataTag::ItemPrimitive("get_or".to_string(), vec![e, a])
+        Expression::ItemPrimitive("get_or".to_string(), vec![e, a])
     });
 
     register("*", |e, a| {
-        DataTag::ItemPrimitive("multi".to_string(), vec![e, a])
+        Expression::ItemPrimitive("multi".to_string(), vec![e, a])
     });
     register("/", |e, a| {
-        DataTag::ItemPrimitive("div".to_string(), vec![e, a])
+        Expression::ItemPrimitive("div".to_string(), vec![e, a])
     });
     register("%", |e, a| {
-        DataTag::ItemPrimitive("mod".to_string(), vec![e, a])
+        Expression::ItemPrimitive("mod".to_string(), vec![e, a])
     });
 
     register("+", |e, a| {
-        DataTag::ItemPrimitive("add".to_string(), vec![e, a])
+        Expression::ItemPrimitive("add".to_string(), vec![e, a])
     });
     register("-", |e, a| {
-        DataTag::ItemPrimitive("sub".to_string(), vec![e, a])
+        Expression::ItemPrimitive("sub".to_string(), vec![e, a])
     });
 
     register(" is ", |e, a| {
-        DataTag::ItemPrimitive(
+        Expression::ItemPrimitive(
             "eq".to_string(),
-            vec![DataTag::ItemPrimitive("type".to_string(), vec![e]), a],
+            vec![Expression::ItemPrimitive("type".to_string(), vec![e]), a],
         )
     });
     register(" in ", |e, a| {
-        DataTag::ItemPrimitive("in".to_string(), vec![e, a])
+        Expression::ItemPrimitive("in".to_string(), vec![e, a])
     });
     register("==", |e, a| {
-        DataTag::ItemPrimitive("eq".to_string(), vec![e, a])
+        Expression::ItemPrimitive("eq".to_string(), vec![e, a])
     });
     register("!=", |e, a| {
-        DataTag::ItemPrimitive(
+        Expression::ItemPrimitive(
             "not".to_string(),
-            vec![DataTag::ItemPrimitive("eq".to_string(), vec![e, a])],
+            vec![Expression::ItemPrimitive("eq".to_string(), vec![e, a])],
         )
     });
     register(">=", |e, a| {
-        DataTag::ItemPrimitive("ge".to_string(), vec![e, a])
+        Expression::ItemPrimitive("ge".to_string(), vec![e, a])
     });
     register("<=", |e, a| {
-        DataTag::ItemPrimitive("le".to_string(), vec![e, a])
+        Expression::ItemPrimitive("le".to_string(), vec![e, a])
     });
     register(">", |e, a| {
-        DataTag::ItemPrimitive("r_angle".to_string(), vec![e, a])
+        Expression::ItemPrimitive("r_angle".to_string(), vec![e, a])
     });
     register("<", |e, a| {
-        DataTag::ItemPrimitive("l_angle".to_string(), vec![e, a])
+        Expression::ItemPrimitive("l_angle".to_string(), vec![e, a])
     });
     register("&&", |e, a| {
-        DataTag::ItemPrimitive("and".to_string(), vec![e, a])
+        Expression::ItemPrimitive("and".to_string(), vec![e, a])
     });
     register("||", |e, a| {
-        DataTag::ItemPrimitive("or".to_string(), vec![e, a])
+        Expression::ItemPrimitive("or".to_string(), vec![e, a])
     });
 
     result

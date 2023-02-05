@@ -54,6 +54,6 @@ impl TemplateAst {
         }
     }
     pub fn new_text(text: &str) -> TemplateAst {
-        ItemExpr(ItemStatic(TmplValue::Text(text.to_string())))
+        ItemExpr(ItemValue(TmplValue::Text(text.to_string())))
     }
 }

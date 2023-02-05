@@ -40,7 +40,7 @@ impl Compile {
                         operator.check_scope(&stack)?;
                         stack.add_node(operator.build_ast(src)?)?;
                     } else {
-                        stack.add_node(TemplateAst::ItemExpr(Expression::ItemStatic(
+                        stack.add_node(TemplateAst::ItemExpr(Expression::ItemValue(
                             TmplValue::Text(src.to_string()),
                         )))?;
                     }
