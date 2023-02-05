@@ -1,3 +1,4 @@
+use crate::err::TemplateError::SyntaxError;
 use std::collections::HashMap;
 use std::ops::Not;
 
@@ -112,18 +113,33 @@ impl ExpressionManager {
     }
     fn covert_symbol_once(
         covert: &ExprSymbolCovert,
-        src: Vec<DataTag>,
+        mut src: Vec<DataTag>,
     ) -> TmplResult<Vec<DataTag>> {
-        let result = vec![];
-        let mut iter = src.iter();
+        let symbol = ItemSymbol(covert.symbol.to_string());
+        src = src
+            .into_iter()
+            .map(|e| {
+                if let ItemPrimitive(name, child) = e {
+                    Self::covert_symbol_once(covert, child).map(|e| ItemPrimitive(name, e))
+                } else {
+                    Ok(e)
+                }
+            })
+            .collect::<TmplResult<Vec<DataTag>>>()?;
         loop {
-            let option = iter.next();
-            println!("{:?} {:?}", option, iter.next());
-            if option.is_none() {
+            if let Some((k, v)) = src.iter().enumerate().find(|e| e.1.eq(&symbol)) {
+                if k % 2 != 1 && k == src.len() {
+                    return Err(SyntaxError(format!("此符号'{:?}'位置错误！", v)));
+                }
+                let right = src.remove(k + 1);
+                let left = src.remove(k - 1);
+                let func = &covert.covert;
+                src[k - 1] = func(left, right); // 填充旧位置
+            } else {
                 break;
             }
         }
-        Ok(result)
+        return Ok(src);
     }
     ///翻译原语
     fn covert_primitive(src: Vec<DataTag>) -> Vec<DataTag> {
@@ -194,7 +210,7 @@ impl ExpressionManager {
                 if let ItemSymbol(syn) = current {
                     //符号则表明为group
                     push_other(ItemSymbol(syn.to_string())); //插入当前数据
-                    stack.push(("_group".to_string(), vec![])); //新建
+                    stack.push(("group".to_string(), vec![])); //新建
                 } else if let ItemVariable(var) = current {
                     // 否则为原语
                     let mut new_var = Clone::clone(var);
@@ -354,10 +370,9 @@ mod test {
     #[test]
     fn test() {
         let manager = ExpressionManager::default();
-        // manager
-        //     .compile(r#"(kotlin.lang.get('name') ?: kotlin.name ?: name ?: '没有').to_int() + 12.to_str() + 21.32 "#);
+        manager
+            .compile(r#"(kotlin.lang.get('name') ?: kotlin.name ?: name ?: '没有').to_int() + 12.to_str() + 21.32 "#);
 
-        manager.compile(r#"1 + 2 + 3 + 4"#);
         // manager.compile(r#"1 + (2 * 3) / 4 == 12.to_str()"#);
     }
 }
