@@ -27,7 +27,7 @@ impl ExpressionManager {
     fn compile(&self, expr_str: &str) -> TmplResult<ExpressionIR> {
         let mut src = self.tagged_symbols(ExpressCompileIR::parse_static_str(expr_str))?;
         ExpressionIR::parse_groups(&mut src)?; // 提取表达式的原始字符串
-        src = ExpressionIR::covert_primitives(src);
+        ExpressionIR::covert_primitives(&mut src)?;
         src = self.covert_symbol(src)?;
         Ok(ItemGroup(src))
     }
@@ -44,14 +44,7 @@ mod test {
         println!(
             "{:#?}",
             manager
-                .compile(r#"(kotlin.lang.get('name',data,to_str(), sa.item()) ?: kotlin.name ?: name ?: '没有').to_int() + 12.to_str() + 21.32 "#)
-                .unwrap().to_string()
-        );
-
-        println!(
-            "{:?}",
-            manager
-                .compile(r#"(1 + (2 * 3) / 4 )== 12.to_str()"#)
+                .compile(r#"1+(2+3)+4==5.to_string(1.to_string())"#)
                 .unwrap()
                 .to_string()
         );

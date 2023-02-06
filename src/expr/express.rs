@@ -44,16 +44,18 @@ impl ToString for ExpressionIR {
             ItemValue(st) => {
                 format!("'{}'", st.to_string())
             }
-            ItemVariable(va) => va
-                .iter()
-                .map(|e| e.as_str())
-                .collect::<Vec<&str>>()
-                .join(".")
-                .to_string(),
+            ItemVariable(va) => format!(
+                "${{{}}}",
+                va.iter()
+                    .map(|e| e.as_str())
+                    .collect::<Vec<&str>>()
+                    .join(".")
+                    .to_string()
+            ),
 
             ItemPrimitive(name, child) => {
                 format!(
-                    "#{}({})",
+                    "{}( {} )",
                     name,
                     child
                         .iter()
@@ -64,7 +66,7 @@ impl ToString for ExpressionIR {
             }
             ItemGroup(child) => {
                 format!(
-                    "({})",
+                    "( {} )",
                     child
                         .iter()
                         .map(|e| e.to_string())

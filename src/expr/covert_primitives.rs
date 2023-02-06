@@ -1,38 +1,40 @@
+use crate::err::TmplResult;
 use crate::expr::ExpressionIR;
 use crate::expr::ExpressionIR::*;
 
 impl ExpressionIR {
     ///翻译原语 (将类似 `a.to_string()` 转换为 to_string(a) )
-    pub(crate) fn covert_primitives(src: Vec<ExpressionIR>) -> Vec<ExpressionIR> {
-        let mut iter = src.into_iter();
-        let mut _current = iter.next();
+    pub(crate) fn covert_primitives(src: &mut Vec<ExpressionIR>) -> TmplResult<()> {
+        if src.len() <= 1 {
+            return Ok(());
+        }
         let mut result = vec![];
-
-        loop {
-            let mut current = _current.unwrap();
-            let mut next = iter.next();
-
-            if let ItemPrimitive(name, child) = current {
-                current = ItemPrimitive(name, Self::covert_primitives(child));
-            } else if let ItemGroup(vars) = current {
-                current = ItemGroup(Self::covert_primitives(vars));
-            }
-            if let ItemSymbol(item) = current {
-                result.push(ItemSymbol(item));
+        while src.len() >= 1 {
+            let current = src.remove(0);
+            let mut next_fun = || Some(src.len()).filter(|l| *l > 0).map(|e| src.remove(e));
+            if let ItemSymbol(_) = current {
+                result.push(current);
             } else {
+                let next = next_fun();
                 if let Some(ItemPrimitive(name, mut child)) = next {
                     child.insert(0, current);
-                    result.push(ItemPrimitive(name, child));
-                    next = iter.next();
-                } else {
-                    result.push(current);
+                    result.push(ItemPrimitive(name.to_owned(), child));
+                } else if let Some(ItemGroup(mut child)) = next {
+                    child.insert(0, current);
+                    result.push(ItemGroup(child));
+                } else if let Some(next) = next {
+                    src.insert(0, next)
                 }
             }
-            _current = next;
-            if _current.is_none() {
-                break;
+        }
+
+        for item in src {
+            if let ItemPrimitive(_, child) = item {
+                Self::covert_primitives(child)?;
+            } else if let ItemGroup(vars) = item {
+                Self::covert_primitives(vars)?;
             }
         }
-        result
+        Ok(())
     }
 }
