@@ -4,7 +4,7 @@ use crate::expr::ExpressionIR::*;
 
 impl ExpressionIR {
     ///翻译原语 (将类似 `a.to_string()` 转换为 to_string(a) )
-    pub(crate) fn covert_primitives(src: &mut Vec<ExpressionIR>) -> TmplResult<()> {
+    pub(crate) fn compile_primitives(src: &mut Vec<ExpressionIR>) -> TmplResult<()> {
         if src.len() <= 1 {
             return Ok(());
         }
@@ -33,9 +33,9 @@ impl ExpressionIR {
         *src = result;
         for item in src {
             if let ItemPrimitive(_, child) = item {
-                Self::covert_primitives(child)?;
+                Self::compile_primitives(child)?;
             } else if let ItemGroup(vars) = item {
-                Self::covert_primitives(vars)?;
+                Self::compile_primitives(vars)?;
             }
         }
         Ok(())

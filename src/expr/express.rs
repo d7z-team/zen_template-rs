@@ -55,7 +55,7 @@ impl ToString for ExpressionIR {
 
             ItemPrimitive(name, child) => {
                 format!(
-                    "{}( {} )",
+                    "{}({})",
                     name,
                     child
                         .iter()
@@ -66,7 +66,7 @@ impl ToString for ExpressionIR {
             }
             ItemGroup(child) => {
                 format!(
-                    "( {} )",
+                    "({})",
                     child
                         .iter()
                         .map(|e| e.to_string())

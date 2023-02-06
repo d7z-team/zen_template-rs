@@ -69,7 +69,7 @@ impl ExpressionIR {
 
 #[cfg(test)]
 mod test {
-    use crate::expr::tagged_symbols::test::new_ir;
+    use crate::expr::symbol::test::new_ir;
     use crate::expr::ExpressionIR::{ItemGroup, ItemSymbol, ItemValue};
     use crate::expr::SymbolType::Custom;
     use crate::expr::{ExpressionIR, ExpressionManager};
