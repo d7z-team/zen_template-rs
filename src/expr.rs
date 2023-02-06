@@ -7,6 +7,7 @@ pub mod common;
 pub mod common_utils;
 pub mod optimization;
 pub mod stack;
+mod template;
 pub mod util_ast;
 pub mod util_link;
 pub mod util_parse;

@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use crate::expr::common::{ExpressionAST, SymbolType};
+use crate::expr::common::SymbolType;
+use crate::expr::template::default_expressions_symbol;
 use crate::expr::ExpressionIR;
 use crate::expr::ExpressionIR::*;
 use crate::expr::ExpressionManager;
-use crate::template::default_expressions_symbol;
 
 impl ToString for SymbolType {
     fn to_string(&self) -> String {
