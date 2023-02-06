@@ -51,8 +51,17 @@ pub enum SymbolType {
     Custom(String),
 }
 
+///表达式
+#[derive(Debug)]
+pub struct Expression {
+    pub variables: Vec<String>,
+    pub ast: ExpressionAST,
+}
+
+///表达式 AST
+#[derive(Debug)]
 pub enum ExpressionAST {
-    ///最终值
+    ///值
     ItemValue(TmplValue),
     ///变量
     ItemVariable(String),

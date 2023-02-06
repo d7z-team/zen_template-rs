@@ -40,4 +40,28 @@ impl ExpressionIR {
         }
         Ok(())
     }
+    pub fn flat_depth(src: &mut ExpressionIR) -> TmplResult<()> {
+        match src {
+            ItemPrimitive(_, child) => {
+                Self::flat_depth_group(child)?;
+            }
+            ItemGroup(child) => {
+                if child.len() == 1 {
+                    *src = child.remove(0);
+                    Self::flat_depth(src)?;
+                } else {
+                    Self::flat_depth_group(child)?;
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+    //深度精简
+    pub fn flat_depth_group(src: &mut Vec<ExpressionIR>) -> TmplResult<()> {
+        for item in src.iter_mut() {
+            Self::flat_depth(item)?;
+        }
+        Ok(())
+    }
 }

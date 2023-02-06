@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::expr::common::{Primitive, SymbolType};
+use crate::expr::common::{ExpressionAST, SymbolType};
 use crate::expr::ExpressionIR;
 use crate::expr::ExpressionIR::*;
 use crate::expr::ExpressionManager;
