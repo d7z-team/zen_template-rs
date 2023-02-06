@@ -11,7 +11,7 @@ impl ExpressionIR {
         let mut result = vec![];
         while src.len() >= 1 {
             let current = src.remove(0);
-            let mut next_fun = || Some(src.len()).filter(|l| *l > 0).map(|e| src.remove(e));
+            let mut next_fun = || Some(src.len()).filter(|l| *l > 0).map(|_| src.remove(0));
             if let ItemSymbol(_) = current {
                 result.push(current);
             } else {
@@ -23,11 +23,14 @@ impl ExpressionIR {
                     child.insert(0, current);
                     result.push(ItemGroup(child));
                 } else if let Some(next) = next {
-                    src.insert(0, next)
+                    result.push(current);
+                    src.insert(0, next);
+                } else {
+                    result.push(current);
                 }
             }
         }
-
+        *src = result;
         for item in src {
             if let ItemPrimitive(_, child) = item {
                 Self::covert_primitives(child)?;

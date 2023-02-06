@@ -28,6 +28,7 @@ impl ExpressionManager {
         let mut src = self.tagged_symbols(ExpressCompileIR::parse_static_str(expr_str))?;
         ExpressionIR::parse_groups(&mut src)?; // 提取表达式的原始字符串
         ExpressionIR::covert_primitives(&mut src)?;
+        println!("{:?}", src);
         src = self.covert_symbol(src)?;
         Ok(ItemGroup(src))
     }
