@@ -4,7 +4,7 @@ use crate::ast::TemplateAst;
 use crate::compile::ast_stack::TmplAstStack;
 use crate::config::TemplateConfig;
 use crate::err::TmplResult;
-use crate::expr::Expression;
+use crate::expr::ExpressionIR;
 use crate::utils::str::Block;
 use crate::value::TmplValue;
 
@@ -40,7 +40,7 @@ impl Compile {
                         operator.check_scope(&stack)?;
                         stack.add_node(operator.build_ast(src)?)?;
                     } else {
-                        stack.add_node(TemplateAst::ItemExpr(Expression::ItemValue(
+                        stack.add_node(TemplateAst::ItemExpr(ExpressionIR::ItemValue(
                             TmplValue::Text(src.to_string()),
                         )))?;
                     }

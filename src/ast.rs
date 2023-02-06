@@ -1,5 +1,5 @@
 use crate::ast::TemplateAst::*;
-use crate::expr::Expression::*;
+use crate::expr::ExpressionIR::*;
 use crate::expr::*;
 use crate::value::TmplValue;
 
@@ -8,7 +8,7 @@ use crate::value::TmplValue;
 pub enum CommandParam {
     Keywords,
     Assignment(Vec<String>),
-    Expression(Expression),
+    Expression(ExpressionIR),
     StaticValue(TmplValue),
 }
 
@@ -37,7 +37,7 @@ impl Branch {
 #[derive(Debug)]
 pub enum TemplateAst {
     /// 变量渲染，属于控制对象
-    ItemExpr(Expression),
+    ItemExpr(ExpressionIR),
     /// 流程控制，属于分支对象
     ItemBranch(String, Vec<Branch>, bool),
     /// 指令控制,属于控制对象

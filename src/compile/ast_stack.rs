@@ -7,7 +7,7 @@ use crate::ast::TemplateAst;
 use crate::ast::TemplateAst::ItemBranch;
 use crate::err::TemplateError::{ExistsError, GenericError};
 use crate::err::TmplResult;
-use crate::expr::Expression::ItemValue;
+use crate::expr::ExpressionIR::ItemValue;
 use crate::syntax::{BranchSyntaxWrapper, OperatorSyntax};
 use crate::value::TmplValue;
 

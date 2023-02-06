@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+extern crate core;
+
 use std::collections::HashMap;
 use std::rc::Rc;
 
