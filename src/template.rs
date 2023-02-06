@@ -1,4 +1,4 @@
-use crate::expr::*;
+use crate::expr::common::{ExprSymbolCovert, ExpressionIR};
 use crate::syntax::*;
 
 pub fn default_state() -> Vec<OperatorSyntax> {

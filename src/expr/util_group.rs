@@ -1,5 +1,7 @@
 use crate::err::TmplResult;
-use crate::expr::{ExprStack, ExpressionIR, SymbolType};
+use crate::expr::common::SymbolType;
+use crate::expr::stack::ExprStack;
+use crate::expr::ExpressionIR;
 use crate::value::TmplValue;
 use crate::value::TmplValue::Number;
 
@@ -69,9 +71,9 @@ impl ExpressionIR {
 
 #[cfg(test)]
 mod test {
-    use crate::expr::symbol::test::new_ir;
+    use crate::expr::common::SymbolType::Custom;
+    use crate::expr::util_tag::test::new_ir;
     use crate::expr::ExpressionIR::{ItemGroup, ItemSymbol, ItemValue};
-    use crate::expr::SymbolType::Custom;
     use crate::expr::{ExpressionIR, ExpressionManager};
     use crate::value::TmplValue;
 

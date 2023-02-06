@@ -4,7 +4,7 @@ use crate::expr::ExpressionIR::*;
 
 impl ExpressionIR {
     ///翻译原语 (将类似 `a.to_string()` 转换为 to_string(a) )
-    pub(crate) fn compile_primitives(src: &mut Vec<ExpressionIR>) -> TmplResult<()> {
+    pub fn compile_primitives(src: &mut Vec<ExpressionIR>) -> TmplResult<()> {
         if src.len() <= 1 {
             return Ok(());
         }

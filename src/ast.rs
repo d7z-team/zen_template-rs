@@ -1,6 +1,6 @@
 use crate::ast::TemplateAst::*;
-use crate::expr::ExpressionIR::*;
-use crate::expr::*;
+use crate::expr::common::ExpressionIR;
+use crate::expr::common::ExpressionIR::ItemValue;
 use crate::value::TmplValue;
 
 /// 参数包装

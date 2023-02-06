@@ -1,28 +1,10 @@
+use std::collections::HashMap;
+
+use crate::expr::common::{Primitive, SymbolType};
+use crate::expr::ExpressionIR;
 use crate::expr::ExpressionIR::*;
-use crate::value::TmplValue;
-
-/// 表达式编译中间代码
-#[derive(Debug, Clone, PartialEq)]
-pub enum ExpressionIR {
-    ///标记为符号
-    ItemSymbol(SymbolType),
-    ///标记为最终值
-    ItemValue(TmplValue),
-    ///变量
-    ItemVariable(Vec<String>),
-    ///原语（名称，参数）
-    ItemPrimitive(String, Vec<ExpressionIR>),
-    /// 一组表达式
-    ItemGroup(Vec<ExpressionIR>),
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum SymbolType {
-    BlockStart,
-    BlockEnd,
-    BlockCut,
-    Custom(String),
-}
+use crate::expr::ExpressionManager;
+use crate::template::default_expressions_symbol;
 
 impl ToString for SymbolType {
     fn to_string(&self) -> String {
@@ -74,6 +56,15 @@ impl ToString for ExpressionIR {
                         .join(", ")
                 )
             }
+        }
+    }
+}
+
+impl Default for ExpressionManager {
+    fn default() -> Self {
+        ExpressionManager {
+            symbols: default_expressions_symbol(),
+            primitive_renders: HashMap::new(),
         }
     }
 }

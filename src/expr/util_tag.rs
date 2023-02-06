@@ -1,10 +1,11 @@
 use std::ops::Not;
 
 use crate::err::TmplResult;
+use crate::expr::common::SymbolType;
+use crate::expr::common::SymbolType::*;
 use crate::expr::ExpressCompileIR::*;
 use crate::expr::ExpressionIR::*;
-use crate::expr::SymbolType::*;
-use crate::expr::{ExpressCompileIR, ExpressionIR, ExpressionManager, SymbolType};
+use crate::expr::{ExpressCompileIR, ExpressionIR, ExpressionManager};
 use crate::utils::str;
 use crate::value::TmplValue;
 
@@ -91,11 +92,11 @@ impl ExpressionManager {
 #[cfg(test)]
 pub mod test {
     use crate::err::TmplResult;
+    use crate::expr::common::SymbolType::Custom;
     use crate::expr::ExpressCompileIR;
     use crate::expr::ExpressCompileIR::{Original, Tag};
     use crate::expr::ExpressionIR::{ItemSymbol, ItemValue};
     use crate::expr::ExpressionManager;
-    use crate::expr::SymbolType::Custom;
     use crate::value::TmplValue::Number;
 
     #[test]
