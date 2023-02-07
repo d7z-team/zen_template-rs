@@ -27,20 +27,20 @@ pub fn default_expressions_symbol() -> (Vec<ExpressionSymbolCovert>, HashMap<Str
 
     register("*", |e, a| {
         ItemPrimitive("multi".to_string(), vec![e, a])
-    }, Native(get_or));
+    }, Native(multi));
     register("/", |e, a| {
         ItemPrimitive("div".to_string(), vec![e, a])
-    }, Native(get_or));
+    }, Native(div));
     register("%", |e, a| {
         ItemPrimitive("mod".to_string(), vec![e, a])
-    }, Native(get_or));
+    }, Native(_mod));
 
     register("+", |e, a| {
         ItemPrimitive("add".to_string(), vec![e, a])
-    }, Native(get_or));
+    }, Native(add));
     register("-", |e, a| {
         ItemPrimitive("sub".to_string(), vec![e, a])
-    }, Native(get_or));
+    }, Native(sub));
 
     register(" is ", |e, a| {
         ItemPrimitive(

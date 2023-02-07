@@ -36,6 +36,14 @@ impl ExpressionAST {
 
 #[cfg(test)]
 mod test {
+    use crate::expression::{ExpressionAST, ExpressionManager};
+    use crate::value::TemplateValue;
+
     #[test]
-    fn test() {}
+    fn test() {
+        let manager = ExpressionManager::default();
+        let expression = manager.compile("1 + 2 +3").unwrap();
+        println!("{}", expression.to_string());
+        println!("{:?}", expression.ast.run(|name| None, |item| TemplateValue::None));
+    }
 }
