@@ -1,9 +1,8 @@
-use crate::err::TmplResult;
-use crate::expr::common::SymbolType;
-use crate::expr::stack::ExprStack;
-use crate::expr::ExpressionIR;
-use crate::value::TmplValue;
-use crate::value::TmplValue::Number;
+use crate::error::TmplResult;
+use crate::expression::stack::ExpressionStack;
+use crate::expression::{ExpressionIR, SymbolType};
+use crate::value::TemplateValue;
+use crate::value::TemplateValue::Number;
 
 impl ExpressionIR {
     ///解析括号是否为分组或者原语
@@ -28,7 +27,7 @@ impl ExpressionIR {
                 src[index] = ExpressionIR::ItemGroup(vec![]);
             }
         }
-        let mut stack = ExprStack::default();
+        let mut stack = ExpressionStack::default();
         while src.len() != 0 {
             let item = src.remove(0);
             match &item {
@@ -46,7 +45,7 @@ impl ExpressionIR {
                 }
                 ExpressionIR::ItemVariable(var) => {
                     if var.len() == 1 {
-                        match TmplValue::from(var[0].as_str()) {
+                        match TemplateValue::from(var[0].as_str()) {
                             Number(num) => stack.push(ExpressionIR::ItemValue(Number(num))),
                             _ => stack.push(item),
                         };
@@ -71,11 +70,11 @@ impl ExpressionIR {
 
 #[cfg(test)]
 mod test {
-    use crate::expr::common::SymbolType::Custom;
-    use crate::expr::util_tag::test::new_ir;
-    use crate::expr::ExpressionIR::{ItemGroup, ItemSymbol, ItemValue};
-    use crate::expr::{ExpressionIR, ExpressionManager};
-    use crate::value::TmplValue;
+    use crate::expression::expression_specs::SymbolType::Custom;
+    use crate::expression::tag::test::new_ir;
+    use crate::expression::ExpressionIR::{ItemGroup, ItemSymbol, ItemValue};
+    use crate::expression::{ExpressionIR, ExpressionManager};
+    use crate::value::TemplateValue;
 
     #[test]
     fn test_parse_groups() {
@@ -88,22 +87,22 @@ mod test {
         assert_eq!(
             covert("1 + 2 == 3"),
             vec![
-                ItemValue(TmplValue::Number(1)),
+                ItemValue(TemplateValue::Number(1)),
                 ItemSymbol(Custom("+".to_string())),
-                ItemValue(TmplValue::Number(2)),
+                ItemValue(TemplateValue::Number(2)),
                 ItemSymbol(Custom("==".to_string())),
-                ItemValue(TmplValue::Number(3)),
+                ItemValue(TemplateValue::Number(3)),
             ]
         );
         assert_eq!(
             covert("1 && (2 == 3)"),
             vec![
-                ItemValue(TmplValue::Number(1)),
+                ItemValue(TemplateValue::Number(1)),
                 ItemSymbol(Custom("&&".to_string())),
                 ItemGroup(vec![
-                    ItemValue(TmplValue::Number(2)),
+                    ItemValue(TemplateValue::Number(2)),
                     ItemSymbol(Custom("==".to_string())),
-                    ItemValue(TmplValue::Number(3)),
+                    ItemValue(TemplateValue::Number(3)),
                 ]),
             ]
         )

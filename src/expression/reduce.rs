@@ -1,6 +1,6 @@
-use crate::err::TmplResult;
-use crate::expr::ExpressionIR;
-use crate::expr::ExpressionIR::*;
+use crate::error::TmplResult;
+use crate::expression::ExpressionIR;
+use crate::expression::ExpressionIR::*;
 
 impl ExpressionIR {
     ///翻译原语 (将类似 `a.to_string()` 转换为 to_string(a) )
@@ -33,7 +33,11 @@ impl ExpressionIR {
         *src = result;
         for item in src {
             if let ItemPrimitive(_, child) = item {
-                Self::compile_primitives(child)?;
+                for item in child.iter_mut() {
+                    if let ItemGroup(child) = item {
+                        Self::compile_primitives(child)?;
+                    }
+                }
             } else if let ItemGroup(vars) = item {
                 Self::compile_primitives(vars)?;
             }

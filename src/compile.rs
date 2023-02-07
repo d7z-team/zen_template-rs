@@ -3,10 +3,8 @@ use std::rc::Rc;
 use crate::ast::TemplateAst;
 use crate::compile::ast_stack::TmplAstStack;
 use crate::config::TemplateConfig;
-use crate::err::TmplResult;
-use crate::expr::common::ExpressionIR::ItemValue;
-use crate::utils::str::Block;
-use crate::value::TmplValue;
+use crate::error::TmplResult;
+use crate::utils::Block;
 
 pub mod ast_stack;
 
@@ -40,9 +38,7 @@ impl Compile {
                         operator.check_scope(&stack)?;
                         stack.add_node(operator.build_ast(src)?)?;
                     } else {
-                        stack.add_node(TemplateAst::ItemExpr(ItemValue(TmplValue::Text(
-                            src.to_string(),
-                        ))))?;
+                        stack.add_node(TemplateAst::new_text(src))?;
                     }
                 }
             } else if let Block::Static(text) = *src_block {

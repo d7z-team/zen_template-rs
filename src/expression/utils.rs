@@ -1,8 +1,8 @@
-use crate::expr::ExpressCompileIR::{Original, Tag};
-use crate::expr::ExpressionIR;
-use crate::expr::ExpressionIR::ItemValue;
-use crate::utils::str::Block;
-use crate::value::TmplValue;
+use crate::expression::ExpressCompileIR::{Original, Tag};
+use crate::expression::ExpressionIR;
+use crate::expression::ExpressionIR::ItemValue;
+use crate::utils::Block;
+use crate::value::TemplateValue;
 
 ///表达式编译中间产物
 #[derive(Debug, PartialEq)]
@@ -22,11 +22,11 @@ impl ExpressCompileIR<'static> {
                 Block::Static(d) => Block::new_group(d, "'", "'", &vec![("\"", "\"")])
                     .into_iter()
                     .map(|e| match e {
-                        Block::Dynamic(dy) => Tag(ItemValue(TmplValue::Text(dy.to_string()))),
+                        Block::Dynamic(dy) => Tag(ItemValue(TemplateValue::Text(dy.to_string()))),
                         Block::Static(st) => Original(st),
                     })
                     .collect(),
-                Block::Dynamic(s) => vec![Tag(ItemValue(TmplValue::Text(s.to_string())))],
+                Block::Dynamic(s) => vec![Tag(ItemValue(TemplateValue::Text(s.to_string())))],
             })
             .collect::<Vec<ExpressCompileIR>>()
     }
@@ -34,10 +34,10 @@ impl ExpressCompileIR<'static> {
 
 #[cfg(test)]
 mod test {
-    use crate::expr::ExpressCompileIR;
-    use crate::expr::ExpressCompileIR::{Original, Tag};
-    use crate::expr::ExpressionIR::ItemValue;
-    use crate::value::TmplValue;
+    use crate::expression::ExpressCompileIR;
+    use crate::expression::ExpressCompileIR::{Original, Tag};
+    use crate::expression::ExpressionIR::ItemValue;
+    use crate::value::TemplateValue;
 
     #[test]
     fn test_parse_str() {
@@ -45,9 +45,9 @@ mod test {
             ExpressCompileIR::parse_static_str(r#"hello world 'dragon' "dragon""#),
             vec![
                 Original("hello world "),
-                Tag(ItemValue(TmplValue::Text("dragon".to_string()))),
+                Tag(ItemValue(TemplateValue::Text("dragon".to_string()))),
                 Original(" "),
-                Tag(ItemValue(TmplValue::Text("dragon".to_string()))),
+                Tag(ItemValue(TemplateValue::Text("dragon".to_string()))),
             ]
         )
     }

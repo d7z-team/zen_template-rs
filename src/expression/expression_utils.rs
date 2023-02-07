@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 
-use crate::expr::common::SymbolType;
-use crate::expr::template::default_expressions_symbol;
-use crate::expr::ExpressionIR;
-use crate::expr::ExpressionIR::*;
-use crate::expr::ExpressionManager;
+use crate::expression::template::{default_expressions_symbol, default_primitive_renders};
+use crate::expression::ExpressionManager;
+use crate::expression::{ExpressionIR, SymbolType};
 
 impl ToString for SymbolType {
     fn to_string(&self) -> String {
@@ -20,13 +18,13 @@ impl ToString for SymbolType {
 impl ToString for ExpressionIR {
     fn to_string(&self) -> String {
         match self {
-            ItemSymbol(sy) => {
+            ExpressionIR::ItemSymbol(sy) => {
                 format!(" `{}` ", sy.to_string())
             }
-            ItemValue(st) => {
+            ExpressionIR::ItemValue(st) => {
                 format!("'{}'", st.to_string())
             }
-            ItemVariable(va) => format!(
+            ExpressionIR::ItemVariable(va) => format!(
                 "${{{}}}",
                 va.iter()
                     .map(|e| e.as_str())
@@ -35,7 +33,7 @@ impl ToString for ExpressionIR {
                     .to_string()
             ),
 
-            ItemPrimitive(name, child) => {
+            ExpressionIR::ItemPrimitive(name, child) => {
                 format!(
                     "{}({})",
                     name,
@@ -46,7 +44,7 @@ impl ToString for ExpressionIR {
                         .join(", ")
                 )
             }
-            ItemGroup(child) => {
+            ExpressionIR::ItemGroup(child) => {
                 format!(
                     "({})",
                     child
@@ -64,7 +62,7 @@ impl Default for ExpressionManager {
     fn default() -> Self {
         ExpressionManager {
             symbols: default_expressions_symbol(),
-            primitive_renders: HashMap::new(),
+            primitive_renders: default_primitive_renders(),
         }
     }
 }

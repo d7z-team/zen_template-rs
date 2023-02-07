@@ -8,20 +8,20 @@ use std::rc::Rc;
 use crate::ast::TemplateAst;
 use crate::compile::Compile;
 use crate::config::TemplateConfig;
-use crate::err::{TemplateError, TmplResult};
-use crate::value::TmplValue;
+use crate::error::{TemplateError, TmplResult};
+use crate::value::TemplateValue;
 
 pub mod ast;
 mod compile;
 pub mod config;
-mod err;
-pub mod expr;
+mod error;
+pub mod expression;
 pub mod syntax;
 mod template;
 pub mod utils;
 pub mod value;
 
-pub type ValueFormatter = dyn Fn(&Vec<&TmplValue>) -> TmplResult<TmplValue>;
+pub type ValueFormatter = dyn Fn(&Vec<&TemplateValue>) -> TmplResult<TemplateValue>;
 
 /// EasyTemplate 模板引擎
 pub struct EasyTemplate {

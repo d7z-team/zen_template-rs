@@ -1,16 +1,15 @@
-use crate::err::TemplateError::SyntaxError;
-use crate::err::TmplResult;
-use crate::expr::common::Expression;
-use crate::expr::common::ExpressionAST;
-use crate::expr::common::ExpressionIR;
-use crate::value::TmplValue;
+use crate::error::TemplateError::SyntaxError;
+use crate::error::TmplResult;
+use crate::expression::{Expression, ExpressionAST, ExpressionIR};
+
+use crate::value::TemplateValue;
 
 impl ExpressionIR {
     ///将表达式转换为 AST
     pub fn to_ast(self: Self) -> TmplResult<ExpressionAST> {
         let ast = match self {
             ExpressionIR::ItemGroup(_) | ExpressionIR::ItemSymbol(_) => Err(SyntaxError(format!(
-                "无法将 IR 的 Group/Symbol 转换为 AST，可能是 IR 未解析完成"
+                "无法将 IR 的 Group/Symbol 转换为 AST，可能是 IR 存在未知符号或语法错误."
             )))?,
 
             ExpressionIR::ItemValue(value) => ExpressionAST::ItemValue(value),
@@ -26,11 +25,11 @@ impl ExpressionIR {
                 let mut params = vars
                     .iter()
                     .map(|e| {
-                        match TmplValue::from(e.as_str()) {
-                            TmplValue::Number(number) => TmplValue::Number(number),
-                            _ => TmplValue::Text(e.to_string()),
+                        match TemplateValue::from(e.as_str()) {
+                            TemplateValue::Number(number) => TemplateValue::Number(number),
+                            _ => TemplateValue::Text(e.to_string()),
                         };
-                        ExpressionAST::ItemValue(TmplValue::Text("s".to_string()))
+                        ExpressionAST::ItemValue(TemplateValue::Text("s".to_string()))
                     })
                     .collect::<Vec<ExpressionAST>>();
                 params.insert(0, ExpressionAST::ItemVariable(var.to_string()));

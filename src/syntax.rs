@@ -7,9 +7,9 @@ use crate::ast::CommandParam::Keywords;
 use crate::ast::TemplateAst::{ItemBranch, ItemCommand};
 use crate::ast::{Branch, CommandParam, TemplateAst};
 use crate::compile::ast_stack::TmplAstStack;
-use crate::err::TemplateError::GenericError;
-use crate::err::TmplResult;
-use crate::utils::str::is_expr;
+use crate::error::TemplateError::GenericError;
+use crate::error::TmplResult;
+use crate::utils::StringUtils;
 
 /// 流程控制参数
 #[derive(Debug)]
@@ -63,7 +63,9 @@ impl CommandSyntax {
                             } else {
                                 vec![*param]
                             };
-                            if let Some(inv_expr) = params.iter().find(|e| is_expr(**e).not()) {
+                            if let Some(inv_expr) =
+                                params.iter().find(|e| StringUtils::is_expr(**e).not())
+                            {
                                 debug!("变量 {:?} 格式错误！", inv_expr);
                                 continue;
                             }

@@ -1,18 +1,18 @@
-use crate::expr::ExpressionIR;
+use crate::expression::ExpressionIR;
 
-pub struct ExprStack {
+pub struct ExpressionStack {
     pub(crate) data: Vec<ExpressionIR>,
 }
 
-impl Default for ExprStack {
+impl Default for ExpressionStack {
     fn default() -> Self {
-        ExprStack {
+        ExpressionStack {
             data: vec![ExpressionIR::ItemGroup(vec![])],
         }
     }
 }
 
-impl ExprStack {
+impl ExpressionStack {
     pub fn push(&mut self, item: ExpressionIR) {
         if let ExpressionIR::ItemGroup(data) = &item {
             if data.is_empty() {

@@ -1,18 +1,18 @@
 use std::collections::HashMap;
 
-use crate::err::TmplResult;
-use crate::value::TmplValue;
+use crate::error::TmplResult;
+use crate::value::TemplateValue;
 
 ///表达式处理器
 pub struct ExpressionManager {
     ///符号表，包含符号转原语方式
-    pub symbols: Vec<ExprSymbolCovert>,
+    pub symbols: Vec<ExpressionSymbolCovert>,
     /// 原语
     pub primitive_renders: HashMap<String, PrimitiveRenderType>,
 }
 
 /// 符号转换
-pub struct ExprSymbolCovert {
+pub struct ExpressionSymbolCovert {
     ///符号
     pub symbol: String,
     /// 原语翻译函数
@@ -22,7 +22,7 @@ pub struct ExprSymbolCovert {
 ///原语渲染方案
 pub enum PrimitiveRenderType {
     ///原语渲染：对输入的数据进行计算，并返回数据
-    Native(fn(Vec<TmplValue>) -> TmplResult<TmplValue>),
+    Native(fn(Vec<TemplateValue>) -> TmplResult<TemplateValue>),
     ///原语翻译：原语翻译，将高级原语翻译为低级原语,注意！此处不能存在
     Translate(fn(Vec<ExpressionIR>) -> TmplResult<ExpressionIR>),
 }
@@ -33,7 +33,7 @@ pub enum ExpressionIR {
     ///标记为符号
     ItemSymbol(SymbolType),
     ///标记为最终值
-    ItemValue(TmplValue),
+    ItemValue(TemplateValue),
     ///变量
     ItemVariable(Vec<String>),
     ///原语（名称，参数）
@@ -62,7 +62,7 @@ pub struct Expression {
 #[derive(Debug)]
 pub enum ExpressionAST {
     ///值
-    ItemValue(TmplValue),
+    ItemValue(TemplateValue),
     ///变量
     ItemVariable(String),
     ///原语（名称，参数）

@@ -1,8 +1,9 @@
-use crate::err::TemplateError::SyntaxError;
-use crate::err::TmplResult;
-use crate::expr::common::SymbolType::Custom;
-use crate::expr::common::{ExprSymbolCovert, ExpressionIR, ExpressionManager, PrimitiveRenderType};
-use crate::expr::ExpressionIR::{ItemGroup, ItemPrimitive, ItemSymbol};
+use crate::error::TemplateError::SyntaxError;
+use crate::error::TmplResult;
+use crate::expression::ExpressionIR::{ItemGroup, ItemPrimitive, ItemSymbol};
+use crate::expression::{
+    ExpressionIR, ExpressionManager, ExpressionSymbolCovert, PrimitiveRenderType, SymbolType,
+};
 
 impl ExpressionManager {
     ///处理所有符号
@@ -13,8 +14,8 @@ impl ExpressionManager {
         Ok(())
     }
     ///处理单个符号
-    fn link_symbol(covert: &ExprSymbolCovert, src: &mut Vec<ExpressionIR>) -> TmplResult<()> {
-        let symbol = ItemSymbol(Custom(covert.symbol.to_string()));
+    fn link_symbol(covert: &ExpressionSymbolCovert, src: &mut Vec<ExpressionIR>) -> TmplResult<()> {
+        let symbol = ItemSymbol(SymbolType::Custom(covert.symbol.to_string()));
         for e in src.iter_mut() {
             //递归处理符号转换
             if let ItemPrimitive(_, child) = e {
@@ -24,8 +25,8 @@ impl ExpressionManager {
             }
         }
         while let Some((k, v)) = src.iter().enumerate().find(|e| e.1.eq(&symbol)) {
-            if k % 2 != 1 && k == src.len() {
-                return Err(SyntaxError(format!("此符号'{:?}'位置错误！", v)));
+            if k % 2 != 1 || k + 1 >= src.len() {
+                return Err(SyntaxError(format!("符号'{:?}'位置错误！", v.to_string())));
             }
             let right = src.remove(k + 1);
             let left = src.remove(k - 1);

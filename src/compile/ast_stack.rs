@@ -1,15 +1,13 @@
 use std::collections::HashSet;
 use std::ops::Not;
 
-use TemplateAst::ItemExpr;
+use TemplateAst::ItemValue;
 
-use crate::ast::TemplateAst;
 use crate::ast::TemplateAst::ItemBranch;
-use crate::err::TemplateError::{ExistsError, GenericError};
-use crate::err::TmplResult;
-use crate::expr::common::ExpressionIR::ItemValue;
+use crate::ast::{TemplateAst, TemplateAstValue};
+use crate::error::TemplateError::{ExistsError, GenericError};
+use crate::error::TmplResult;
 use crate::syntax::{BranchSyntaxWrapper, OperatorSyntax};
-use crate::value::TmplValue;
 
 pub struct TmplAstStack {
     pub root: Vec<TemplateAst>,
@@ -50,11 +48,11 @@ impl TmplAstStack {
                     self.child_stack
                 )))?
             };
-            if let ItemExpr(ItemValue(TmplValue::Text(new))) = node {
-                if let Some(ItemExpr(ItemValue(TmplValue::Text(old)))) = &mut add.last_mut() {
+            if let ItemValue(TemplateAstValue::ItemString(new)) = node {
+                if let Some(ItemValue(TemplateAstValue::ItemString(old))) = &mut add.last_mut() {
                     old.push_str(&new)
                 } else {
-                    add.push(ItemExpr(ItemValue(TmplValue::Text(new))))
+                    add.push(ItemValue(TemplateAstValue::ItemString(new)))
                 }
             } else {
                 add.push(node)

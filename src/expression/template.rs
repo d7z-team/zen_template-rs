@@ -1,10 +1,11 @@
-use crate::expr::common::{ExprSymbolCovert, ExpressionIR};
+use std::collections::HashMap;
+use crate::expression::{ExpressionIR, ExpressionSymbolCovert, PrimitiveRenderType};
 
 /// 表达式符号映射表，将相关的表达式转换为原语
-pub fn default_expressions_symbol() -> Vec<ExprSymbolCovert> {
+pub fn default_expressions_symbol() -> Vec<ExpressionSymbolCovert> {
     let mut result = Vec::new();
     let mut register = |tag: &str, evolution: fn(ExpressionIR, ExpressionIR) -> ExpressionIR| {
-        result.push(ExprSymbolCovert {
+        result.push(ExpressionSymbolCovert {
             symbol: tag.to_string(),
             covert: evolution,
         })
@@ -68,4 +69,10 @@ pub fn default_expressions_symbol() -> Vec<ExprSymbolCovert> {
     });
 
     result
+}
+
+pub fn default_primitive_renders()->HashMap<String,PrimitiveRenderType>{
+    let map = HashMap::new();
+    map
+
 }

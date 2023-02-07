@@ -1,13 +1,11 @@
 use std::ops::Not;
 
-use crate::err::TmplResult;
-use crate::expr::common::SymbolType;
-use crate::expr::common::SymbolType::*;
-use crate::expr::ExpressCompileIR::*;
-use crate::expr::ExpressionIR::*;
-use crate::expr::{ExpressCompileIR, ExpressionIR, ExpressionManager};
-use crate::utils::str;
-use crate::value::TmplValue;
+use crate::error::TmplResult;
+use crate::expression::ExpressCompileIR::*;
+use crate::expression::ExpressionIR::*;
+use crate::expression::{ExpressCompileIR, ExpressionIR, ExpressionManager, SymbolType};
+use crate::utils::StringUtils;
+use crate::value::TemplateValue;
 
 impl ExpressionManager {
     /// 将未定义的数据进行处理并标记
@@ -23,7 +21,8 @@ impl ExpressionManager {
                     let mut last_start = 0;
                     let mut child_content: Vec<ExpressCompileIR> = vec![];
                     loop {
-                        if let Some(index) = str::find(src, last_start, &symbol.to_string()) {
+                        if let Some(index) = StringUtils::find(src, last_start, &symbol.to_string())
+                        {
                             if let Some(data) =
                                 Some(&src[last_start..index]).filter(|e| e.is_empty().not())
                             {
@@ -58,19 +57,19 @@ impl ExpressionManager {
     ) -> TmplResult<Vec<ExpressionIR>> {
         let mut src = src;
         for item in &self.symbols {
-            Self::tagged_symbols_once(&mut src, Custom(item.symbol.to_string()))?;
+            Self::tagged_symbols_once(&mut src, SymbolType::Custom(item.symbol.to_string()))?;
         }
-        Self::tagged_symbols_once(&mut src, BlockStart)?; //预定义规则
-        Self::tagged_symbols_once(&mut src, BlockEnd)?; //预定义规则
-        Self::tagged_symbols_once(&mut src, BlockCut)?; //预定义规则
+        Self::tagged_symbols_once(&mut src, SymbolType::BlockStart)?; //预定义规则
+        Self::tagged_symbols_once(&mut src, SymbolType::BlockEnd)?; //预定义规则
+        Self::tagged_symbols_once(&mut src, SymbolType::BlockCut)?; //预定义规则
         Ok(src
             .into_iter()
             .map(|e| match e {
-                Original(data) => match TmplValue::from(data.trim()) {
+                Original(data) => match TemplateValue::from(data.trim()) {
                     //此时只剩下变量与静态数据
-                    TmplValue::Float(f) => ItemValue(TmplValue::Float(f)),
-                    TmplValue::Number(n) => ItemValue(TmplValue::Number(n)),
-                    TmplValue::Bool(b) => ItemValue(TmplValue::Bool(b)),
+                    TemplateValue::Float(f) => ItemValue(TemplateValue::Float(f)),
+                    TemplateValue::Number(n) => ItemValue(TemplateValue::Number(n)),
+                    TemplateValue::Bool(b) => ItemValue(TemplateValue::Bool(b)),
                     _ => ItemVariable(
                         data.trim()
                             .split(".")
@@ -91,13 +90,13 @@ impl ExpressionManager {
 
 #[cfg(test)]
 pub mod test {
-    use crate::err::TmplResult;
-    use crate::expr::common::SymbolType::Custom;
-    use crate::expr::ExpressCompileIR;
-    use crate::expr::ExpressCompileIR::{Original, Tag};
-    use crate::expr::ExpressionIR::{ItemSymbol, ItemValue};
-    use crate::expr::ExpressionManager;
-    use crate::value::TmplValue::Number;
+    use crate::error::TmplResult;
+    use crate::expression::expression_specs::SymbolType::Custom;
+    use crate::expression::ExpressCompileIR;
+    use crate::expression::ExpressCompileIR::{Original, Tag};
+    use crate::expression::ExpressionIR::{ItemSymbol, ItemValue};
+    use crate::expression::ExpressionManager;
+    use crate::value::TemplateValue::Number;
 
     #[test]
     fn test_tagged_symbols() {

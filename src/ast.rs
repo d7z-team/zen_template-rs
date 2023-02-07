@@ -1,15 +1,13 @@
-use crate::ast::TemplateAst::*;
-use crate::expr::common::ExpressionIR;
-use crate::expr::common::ExpressionIR::ItemValue;
-use crate::value::TmplValue;
+use crate::expression::Expression;
+use crate::value::TemplateValue;
 
 /// 参数包装
 #[derive(Debug)]
 pub enum CommandParam {
     Keywords,
     Assignment(Vec<String>),
-    Expression(ExpressionIR),
-    StaticValue(TmplValue),
+    Expression(Expression),
+    StaticValue(TemplateValue),
 }
 
 /// 子流程
@@ -37,23 +35,28 @@ impl Branch {
 #[derive(Debug)]
 pub enum TemplateAst {
     /// 变量渲染，属于控制对象
-    ItemExpr(ExpressionIR),
+    ItemValue(TemplateAstValue),
     /// 流程控制，属于分支对象
     ItemBranch(String, Vec<Branch>, bool),
     /// 指令控制,属于控制对象
     ItemCommand(String, Vec<CommandParam>),
+}
+#[derive(Debug)]
+pub enum TemplateAstValue {
+    ItemExpression(Expression),
+    ItemString(String),
 }
 
 impl TemplateAst {
     ///获取结构名称
     pub fn get_tag(&self) -> Option<&str> {
         match self {
-            ItemExpr(_) => None,
-            ItemBranch(e, _, _) => Some(e),
-            ItemCommand(e, _) => Some(e),
+            TemplateAst::ItemBranch(e, _, _) => Some(e),
+            TemplateAst::ItemCommand(e, _) => Some(e),
+            _ => None,
         }
     }
     pub fn new_text(text: &str) -> TemplateAst {
-        ItemExpr(ItemValue(TmplValue::Text(text.to_string())))
+        TemplateAst::ItemValue(TemplateAstValue::ItemString(text.to_string()))
     }
 }
