@@ -24,9 +24,11 @@ impl ExpressionManager {
         ExpressionIR::compile_primitives(&mut src)?; // 处理原语 (此时不应该有任何的未知符号)
         self.link_symbols(&mut src)?; // 替换符号
         ExpressionIR::compile_primitives(&mut src)?; // 处理原语 (此时不应该有任何的未知符号)
+        // println!("{:#?}", ExpressionIR::ItemGroup(src.clone()).to_string());
         self.link_static_primitives(&mut src)?; //渲染静态函数
         let mut ir = ExpressionIR::ItemGroup(src);
         ExpressionIR::flat_depth(&mut ir)?;
+        // println!("{:?}", ir.to_string());
         Ok(Expression::from(ir.to_ast()?))
     }
 }
@@ -41,7 +43,7 @@ mod test {
         println!(
             "{:#?}",
             manager
-                .compile(r#"(1+2)*3/12-31%121 in 1212.get('121'.to_str(12))"#)
+                .compile(r#"(1+2)*3/12-31%121 in 1212.get('121'.to_str(1.22a))"#)
                 .map_err(|e| e.to_string())
                 .unwrap()
                 .to_string()

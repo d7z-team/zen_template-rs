@@ -25,11 +25,10 @@ impl ExpressionIR {
                 let mut params = vars
                     .iter()
                     .map(|e| {
-                        match TemplateValue::from(e.as_str()) {
+                        ExpressionAST::ItemValue(match TemplateValue::from(e.as_str()) {
                             TemplateValue::Number(number) => TemplateValue::Number(number),
                             _ => TemplateValue::Text(e.to_string()),
-                        };
-                        ExpressionAST::ItemValue(TemplateValue::Text("s".to_string()))
+                        })
                     })
                     .collect::<Vec<ExpressionAST>>();
                 params.insert(0, ExpressionAST::ItemVariable(var.to_string()));
