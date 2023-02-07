@@ -1,3 +1,5 @@
+use crate::error::TemplateError::SyntaxError;
+use crate::error::TmplResult;
 use crate::expression::ExpressionIR;
 
 pub struct ExpressionStack {
@@ -13,18 +15,21 @@ impl Default for ExpressionStack {
 }
 
 impl ExpressionStack {
-    pub fn push(&mut self, item: ExpressionIR) {
+    pub fn push(&mut self, item: ExpressionIR)->TmplResult<()> {
         if let ExpressionIR::ItemGroup(data) = &item {
             if data.is_empty() {
-                return;
+                return Ok(());
             }
         }
-        match self.data.last_mut().unwrap() {
-            ExpressionIR::ItemGroup(value) | ExpressionIR::ItemPrimitive(_, value) => {
+        let result = self.data.last_mut();
+        match result {
+            Some(ExpressionIR::ItemGroup(value)) |
+            Some(ExpressionIR::ItemPrimitive(_, value)) => {
                 value.push(item)
             }
-            _ => panic!(),
+            _ => Err(SyntaxError(format!("栈内已无等待关闭的对象，可能存在语法错误！")))?,
         }
+        Ok(())
     }
 
     pub fn new_child(&mut self, item: ExpressionIR) {
@@ -35,9 +40,9 @@ impl ExpressionStack {
         }
     }
 
-    pub fn end_child(&mut self) {
+    pub fn end_child(&mut self)->TmplResult<()> {
         let last = self.data.remove(self.data.len() - 1);
-        self.push(last);
+        self.push(last)
     }
 
     pub fn depth_len(&self) -> usize {

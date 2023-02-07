@@ -1,83 +1,96 @@
 mod primitive;
+mod compile;
+pub  use compile::*;
 
 use primitive::*;
 use std::collections::HashMap;
 use ExpressionIR::ItemPrimitive;
 use crate::error::TmplResult;
 use crate::expression::{ExpressionIR, ExpressionSymbolCovert, PrimitiveRenderType};
+use crate::expression::expression_specs::NativePrimitiveRender;
 use crate::expression::PrimitiveRenderType::Native;
 use crate::value::TemplateValue;
+
+enum PrimitiveType {
+    Static(String, NativePrimitiveRender),
+    Empty,
+}
 
 /// 表达式符号映射表，将相关的表达式转换为原语
 pub fn default_expressions_symbol() -> (Vec<ExpressionSymbolCovert>, HashMap<String, PrimitiveRenderType>) {
     let mut coverts = Vec::new();
     let mut primitives = HashMap::new();
 
-    let mut register = |tag: &str, evolution: fn(ExpressionIR, ExpressionIR) -> ExpressionIR, types: PrimitiveRenderType| {
+    let mut register_symbol = |tag: &str, evolution: fn(ExpressionIR, ExpressionIR) -> ExpressionIR| {
         coverts.push(ExpressionSymbolCovert {
             symbol: tag.to_string(),
             covert: evolution,
         });
-        primitives.insert(tag.to_string(), types);
     };
-
-    register("?:", |e, a| {
+    let mut register_primitives = |tag: &str, data: NativePrimitiveRender| {
+        primitives.insert(tag.to_string(), Native(data))
+    };
+    register_symbol("?:", |e, a| {
         ItemPrimitive("get_or".to_string(), vec![e, a])
-    }, Native(get_or));
+    });
+    register_primitives("get_or", get_or);
 
-    register("*", |e, a| {
+    register_symbol("*", |e, a| {
         ItemPrimitive("multi".to_string(), vec![e, a])
-    }, Native(multi));
-    register("/", |e, a| {
+    });
+    register_primitives("multi", multi);
+    register_symbol("/", |e, a| {
         ItemPrimitive("div".to_string(), vec![e, a])
-    }, Native(div));
-    register("%", |e, a| {
+    });
+    register_primitives("div", div);
+    register_symbol("%", |e, a| {
         ItemPrimitive("mod".to_string(), vec![e, a])
-    }, Native(_mod));
+    });
+    register_primitives("mod", _mod);
 
-    register("+", |e, a| {
+    register_symbol("+", |e, a| {
         ItemPrimitive("add".to_string(), vec![e, a])
-    }, Native(add));
-    register("-", |e, a| {
+    }); register_primitives("add", add);
+    register_symbol("-", |e, a| {
         ItemPrimitive("sub".to_string(), vec![e, a])
-    }, Native(sub));
+    }); register_primitives("sub", sub);
 
-    register(" is ", |e, a| {
+    register_symbol(" is ", |e, a| {
         ItemPrimitive(
             "eq".to_string(),
             vec![ItemPrimitive("type".to_string(), vec![e]), a],
         )
-    }, Native(get_or));
-    register(" in ", |e, a| {
+    });
+    register_symbol(" in ", |e, a| {
         ItemPrimitive("in".to_string(), vec![e, a])
-    }, Native(get_or));
-    register("==", |e, a| {
+    });
+    register_symbol("==", |e, a| {
         ItemPrimitive("eq".to_string(), vec![e, a])
-    }, Native(get_or));
-    register("!=", |e, a| {
+    });
+    register_symbol("!=", |e, a| {
         ItemPrimitive(
             "not".to_string(),
             vec![ItemPrimitive("eq".to_string(), vec![e, a])],
         )
-    }, Native(get_or));
-    register(">=", |e, a| {
+    });
+    register_symbol(">=", |e, a| {
         ItemPrimitive("ge".to_string(), vec![e, a])
-    }, Native(get_or));
-    register("<=", |e, a| {
+    });
+    register_symbol("<=", |e, a| {
         ItemPrimitive("le".to_string(), vec![e, a])
-    }, Native(get_or));
-    register(">", |e, a| {
+    });
+    register_symbol(">", |e, a| {
         ItemPrimitive("r_angle".to_string(), vec![e, a])
-    }, Native(get_or));
-    register("<", |e, a| {
+    });
+    register_symbol("<", |e, a| {
         ItemPrimitive("l_angle".to_string(), vec![e, a])
-    }, Native(get_or));
-    register("&&", |e, a| {
+    });
+    register_symbol("&&", |e, a| {
         ItemPrimitive("and".to_string(), vec![e, a])
-    }, Native(get_or));
-    register("||", |e, a| {
+    });
+    register_symbol("||", |e, a| {
         ItemPrimitive("or".to_string(), vec![e, a])
-    }, Native(get_or));
+    });
 
     (coverts, primitives)
 }

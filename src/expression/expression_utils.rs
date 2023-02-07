@@ -17,7 +17,7 @@ impl ToString for ExpressionIR {
     fn to_string(&self) -> String {
         match self {
             ExpressionIR::ItemSymbol(sy) => {
-                format!(" `{}` ", sy.to_string())
+                format!(" {} ", sy.to_string())
             }
             ExpressionIR::ItemValue(st) => {
                 format!("'{}'", st.to_string())

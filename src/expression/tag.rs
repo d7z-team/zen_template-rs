@@ -92,7 +92,7 @@ impl ExpressionManager {
 pub mod test {
     use crate::error::TmplResult;
     use crate::expression::expression_specs::SymbolType::Custom;
-    use crate::expression::ExpressCompileIR;
+    use crate::expression::{ExpressCompileIR, SymbolType};
     use crate::expression::ExpressCompileIR::{Original, Tag};
     use crate::expression::ExpressionIR::{ItemSymbol, ItemValue};
     use crate::expression::ExpressionManager;
@@ -104,11 +104,11 @@ pub mod test {
         assert_eq!(
             manager.tagged_symbols(new_ir("(1+1)==2")).unwrap(),
             vec![
-                ItemSymbol(Custom("(".to_string())),
+                ItemSymbol(SymbolType::BlockStart),
                 ItemValue(Number(1)),
                 ItemSymbol(Custom("+".to_string())),
                 ItemValue(Number(1)),
-                ItemSymbol(Custom(")".to_string())),
+                ItemSymbol(SymbolType::BlockEnd),
                 ItemSymbol(Custom("==".to_string())),
                 ItemValue(Number(2)),
             ]

@@ -25,12 +25,12 @@ pub(crate) fn add(params: Vec<TemplateValue>) -> TmplResult<TemplateValue> {
     }
     if let TemplateValue::Number(num1) = first {
         if let TemplateValue::Number(num2) = second {
-            return Ok(TemplateValue::Number(num1 % num2));
+            return Ok(TemplateValue::Number(num1 + num2));
         }
     }
     if let TemplateValue::Float(num1) = first {
         if let TemplateValue::Float(num2) = second {
-            return Ok(TemplateValue::Float(num1 % num2));
+            return Ok(TemplateValue::Float(num1 + num2));
         }
     }
     if let TemplateValue::Text(text) = first {

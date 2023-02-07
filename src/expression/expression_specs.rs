@@ -19,10 +19,13 @@ pub struct ExpressionSymbolCovert {
     pub covert: fn(ExpressionIR, ExpressionIR) -> ExpressionIR,
 }
 
+pub type NativePrimitiveRender = fn(Vec<TemplateValue>) -> TmplResult<TemplateValue>;
+
 ///原语渲染方案
+#[derive(Debug)]
 pub enum PrimitiveRenderType {
     ///原语渲染：对输入的数据进行计算，并返回数据
-    Native(fn(Vec<TemplateValue>) -> TmplResult<TemplateValue>),
+    Native(NativePrimitiveRender),
     ///原语翻译：原语翻译，将高级原语翻译为低级原语,注意！此处不能存在
     Translate(fn(Vec<ExpressionIR>) -> TmplResult<ExpressionIR>),
 }

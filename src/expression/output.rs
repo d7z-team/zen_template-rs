@@ -74,7 +74,7 @@ impl ToString for ExpressionAST {
                         .iter()
                         .map(|e| e.to_string())
                         .collect::<Vec<String>>()
-                        .join(", ")
+                        .join(",")
                 )
             }
         }

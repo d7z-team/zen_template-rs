@@ -34,13 +34,13 @@ impl ExpressionIR {
                 ExpressionIR::ItemSymbol(SymbolType::BlockEnd) => {
                     if let Some(ExpressionIR::ItemPrimitive(_, _)) = stack.depth(-1) {
                         if let Some(ExpressionIR::ItemGroup(_)) = stack.depth(0) {
-                            stack.end_child();
+                            stack.end_child()?;
                         }
                     }
-                    stack.end_child();
+                    stack.end_child()?;
                 }
                 ExpressionIR::ItemSymbol(SymbolType::BlockCut) => {
-                    stack.end_child();
+                    stack.end_child()?;
                     stack.new_child(ExpressionIR::ItemGroup(vec![]))
                 }
                 ExpressionIR::ItemVariable(var) => {
@@ -48,12 +48,12 @@ impl ExpressionIR {
                         match TemplateValue::from(var[0].as_str()) {
                             Number(num) => stack.push(ExpressionIR::ItemValue(Number(num))),
                             _ => stack.push(item),
-                        };
+                        }?;
                     } else if var.len() > 1 {
-                        stack.push(item)
+                        stack.push(item)?
                     }
                 }
-                ExpressionIR::ItemSymbol(_) | ExpressionIR::ItemValue(_) => stack.push(item),
+                ExpressionIR::ItemSymbol(_) | ExpressionIR::ItemValue(_) => stack.push(item)?,
                 ExpressionIR::ItemPrimitive(_, _) => {
                     stack.new_child(item);
                     stack.new_child(ExpressionIR::ItemGroup(vec![]))
