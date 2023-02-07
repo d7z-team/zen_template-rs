@@ -1,5 +1,3 @@
-
-
 use crate::expression::template::{default_expressions_symbol, default_primitive_renders};
 use crate::expression::ExpressionManager;
 use crate::expression::{ExpressionIR, SymbolType};
@@ -60,9 +58,13 @@ impl ToString for ExpressionIR {
 
 impl Default for ExpressionManager {
     fn default() -> Self {
+        let (symbols, mut primitive_renders) = default_expressions_symbol();
+        for (k,v) in default_primitive_renders().into_iter() {
+            primitive_renders.insert(k,v);
+        };
         ExpressionManager {
-            symbols: default_expressions_symbol(),
-            primitive_renders: default_primitive_renders(),
+            symbols,
+            primitive_renders,
         }
     }
 }

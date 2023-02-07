@@ -1,78 +1,92 @@
+mod primitive;
+
+use primitive::*;
 use std::collections::HashMap;
+use ExpressionIR::ItemPrimitive;
+use crate::error::TmplResult;
 use crate::expression::{ExpressionIR, ExpressionSymbolCovert, PrimitiveRenderType};
+use crate::expression::PrimitiveRenderType::Native;
+use crate::value::TemplateValue;
 
 /// 表达式符号映射表，将相关的表达式转换为原语
-pub fn default_expressions_symbol() -> Vec<ExpressionSymbolCovert> {
-    let mut result = Vec::new();
-    let mut register = |tag: &str, evolution: fn(ExpressionIR, ExpressionIR) -> ExpressionIR| {
-        result.push(ExpressionSymbolCovert {
+pub fn default_expressions_symbol() -> (Vec<ExpressionSymbolCovert>, HashMap<String, PrimitiveRenderType>) {
+    let mut coverts = Vec::new();
+    let mut primitives = HashMap::new();
+
+    let mut register = |tag: &str, evolution: fn(ExpressionIR, ExpressionIR) -> ExpressionIR, types: PrimitiveRenderType| {
+        coverts.push(ExpressionSymbolCovert {
             symbol: tag.to_string(),
             covert: evolution,
-        })
+        });
+        primitives.insert(tag.to_string(), types);
     };
+
     register("?:", |e, a| {
-        ExpressionIR::ItemPrimitive("get_or".to_string(), vec![e, a])
-    });
+        ItemPrimitive("get_or".to_string(), vec![e, a])
+    }, Native(get_or));
 
     register("*", |e, a| {
-        ExpressionIR::ItemPrimitive("multi".to_string(), vec![e, a])
-    });
+        ItemPrimitive("multi".to_string(), vec![e, a])
+    }, Native(get_or));
     register("/", |e, a| {
-        ExpressionIR::ItemPrimitive("div".to_string(), vec![e, a])
-    });
+        ItemPrimitive("div".to_string(), vec![e, a])
+    }, Native(get_or));
     register("%", |e, a| {
-        ExpressionIR::ItemPrimitive("mod".to_string(), vec![e, a])
-    });
+        ItemPrimitive("mod".to_string(), vec![e, a])
+    }, Native(get_or));
 
     register("+", |e, a| {
-        ExpressionIR::ItemPrimitive("add".to_string(), vec![e, a])
-    });
+        ItemPrimitive("add".to_string(), vec![e, a])
+    }, Native(get_or));
     register("-", |e, a| {
-        ExpressionIR::ItemPrimitive("sub".to_string(), vec![e, a])
-    });
+        ItemPrimitive("sub".to_string(), vec![e, a])
+    }, Native(get_or));
 
     register(" is ", |e, a| {
-        ExpressionIR::ItemPrimitive(
+        ItemPrimitive(
             "eq".to_string(),
-            vec![ExpressionIR::ItemPrimitive("type".to_string(), vec![e]), a],
+            vec![ItemPrimitive("type".to_string(), vec![e]), a],
         )
-    });
+    }, Native(get_or));
     register(" in ", |e, a| {
-        ExpressionIR::ItemPrimitive("in".to_string(), vec![e, a])
-    });
+        ItemPrimitive("in".to_string(), vec![e, a])
+    }, Native(get_or));
     register("==", |e, a| {
-        ExpressionIR::ItemPrimitive("eq".to_string(), vec![e, a])
-    });
+        ItemPrimitive("eq".to_string(), vec![e, a])
+    }, Native(get_or));
     register("!=", |e, a| {
-        ExpressionIR::ItemPrimitive(
+        ItemPrimitive(
             "not".to_string(),
-            vec![ExpressionIR::ItemPrimitive("eq".to_string(), vec![e, a])],
+            vec![ItemPrimitive("eq".to_string(), vec![e, a])],
         )
-    });
+    }, Native(get_or));
     register(">=", |e, a| {
-        ExpressionIR::ItemPrimitive("ge".to_string(), vec![e, a])
-    });
+        ItemPrimitive("ge".to_string(), vec![e, a])
+    }, Native(get_or));
     register("<=", |e, a| {
-        ExpressionIR::ItemPrimitive("le".to_string(), vec![e, a])
-    });
+        ItemPrimitive("le".to_string(), vec![e, a])
+    }, Native(get_or));
     register(">", |e, a| {
-        ExpressionIR::ItemPrimitive("r_angle".to_string(), vec![e, a])
-    });
+        ItemPrimitive("r_angle".to_string(), vec![e, a])
+    }, Native(get_or));
     register("<", |e, a| {
-        ExpressionIR::ItemPrimitive("l_angle".to_string(), vec![e, a])
-    });
+        ItemPrimitive("l_angle".to_string(), vec![e, a])
+    }, Native(get_or));
     register("&&", |e, a| {
-        ExpressionIR::ItemPrimitive("and".to_string(), vec![e, a])
-    });
+        ItemPrimitive("and".to_string(), vec![e, a])
+    }, Native(get_or));
     register("||", |e, a| {
-        ExpressionIR::ItemPrimitive("or".to_string(), vec![e, a])
-    });
+        ItemPrimitive("or".to_string(), vec![e, a])
+    }, Native(get_or));
 
-    result
+    (coverts, primitives)
 }
 
-pub fn default_primitive_renders()->HashMap<String,PrimitiveRenderType>{
-    let map = HashMap::new();
-    map
-
+pub(crate) fn default_primitive_renders() -> HashMap<String, PrimitiveRenderType> {
+    let mut result = HashMap::new();
+    let mut register = |name: &str, func: fn(Vec<TemplateValue>) -> TmplResult<TemplateValue>| {
+        result.insert(name.to_string(), Native(func))
+    };
+    register("get", get);
+    result
 }

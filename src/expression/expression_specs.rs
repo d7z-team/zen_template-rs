@@ -59,7 +59,7 @@ pub struct Expression {
 }
 
 ///表达式 AST
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ExpressionAST {
     ///值
     ItemValue(TemplateValue),

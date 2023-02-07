@@ -22,17 +22,15 @@ impl ExpressionIR {
             ),
             ExpressionIR::ItemVariable(mut vars) => {
                 let var = vars.remove(0);
-                let mut params = vars
-                    .iter()
-                    .map(|e| {
-                        ExpressionAST::ItemValue(match TemplateValue::from(e.as_str()) {
-                            TemplateValue::Number(number) => TemplateValue::Number(number),
-                            _ => TemplateValue::Text(e.to_string()),
-                        })
-                    })
-                    .collect::<Vec<ExpressionAST>>();
-                params.insert(0, ExpressionAST::ItemVariable(var.to_string()));
-                ExpressionAST::ItemPrimitive("get".to_string(), params)
+                let mut left = ExpressionAST::ItemVariable(var);
+                for item in vars.into_iter() {
+                    let right = match TemplateValue::from(&item) {
+                        TemplateValue::Number(number) => TemplateValue::Number(number),
+                        _ => TemplateValue::Text(item.to_string()),
+                    };
+                    left = ExpressionAST::ItemPrimitive("get".to_string(), vec![left, ExpressionAST::ItemValue(right)])
+                }
+                left
             }
         };
         Ok(ast)
@@ -40,18 +38,19 @@ impl ExpressionIR {
 }
 
 impl Expression {
-    fn get_variables(ast: &Vec<ExpressionAST>, variables: &mut Vec<String>) {
+    fn put_variables(ast: &Vec<ExpressionAST>, variables: &mut Vec<String>) {
         ast.iter().for_each(|e| match e {
             ExpressionAST::ItemVariable(name) => variables.push(name.to_string()),
-            ExpressionAST::ItemPrimitive(_, child) => Self::get_variables(child, variables),
+            ExpressionAST::ItemPrimitive(_, child) => Self::put_variables(child, variables),
             _ => {}
         });
     }
 
+    ///解析 AST Tree
     pub fn from(ast: ExpressionAST) -> Self {
         let mut variables: Vec<String> = vec![];
         let mut ast_list = vec![ast];
-        Self::get_variables(&ast_list, &mut variables);
+        Self::put_variables(&ast_list, &mut variables);
         Expression {
             variables,
             ast: ast_list.remove(0),

@@ -8,6 +8,8 @@ mod expression_utils;
 mod stack;
 mod template;
 mod utils;
+mod optimize;
+mod runner;
 
 use crate::error::TmplResult;
 pub use crate::expression::expression_specs::{
@@ -28,7 +30,7 @@ impl ExpressionManager {
         self.link_static_primitives(&mut src)?; //渲染静态函数
         let mut ir = ExpressionIR::ItemGroup(src);
         ExpressionIR::flat_depth(&mut ir)?;
-        // println!("{:?}", ir.to_string());
+        println!("{:?}", ir.to_string());
         Ok(Expression::from(ir.to_ast()?))
     }
 }
@@ -43,7 +45,7 @@ mod test {
         println!(
             "{:#?}",
             manager
-                .compile(r#"(1+2)*3/12-31%121 in 1212.get('121'.to_str(1.22a))"#)
+                .compile(r#"a.b.c.d.e"#)
                 .map_err(|e| e.to_string())
                 .unwrap()
                 .to_string()

@@ -10,6 +10,7 @@ pub enum TemplateError {
     GenericError(String),
     ExistsError(String),
     SyntaxError(String),
+    CheckError(String,String),
 }
 
 impl Display for TemplateError {
@@ -19,6 +20,7 @@ impl Display for TemplateError {
             TemplateError::GenericError(err) => write!(f, "{:?}", err),
             TemplateError::ExistsError(key) => write!(f, "key '{}' exists. ", key),
             TemplateError::SyntaxError(msg) => write!(f, "{}", msg),
+            TemplateError::CheckError(key,msg) => write!(f, "'{}' failed: {}", key,msg),
         }
     }
 }
