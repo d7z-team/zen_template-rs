@@ -1,8 +1,12 @@
 [package]
-name = "easy_template"
+name = "zen_template"
 version = "0.1.0"
 edition = "2021"
 authors = ["ExplodingDragon <ExplodingFKL@gmail.com>"]
+license ="MIT"
+description = "A simple template engine based on rust."
+repository = "https://github.com/d7z-team/zen_template-rs"
+keywords = ["template", "template-engine"]
 
 [dependencies]
 log = "0.4"

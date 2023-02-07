@@ -37,18 +37,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "easy_template"
-version = "0.1.0"
-dependencies = [
- "indoc",
- "log",
- "serde",
- "serde_json",
- "serde_yaml",
- "simple_logger",
-]
-
-[[package]]
 name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -277,3 +265,15 @@ name = "windows_x86_64_msvc"
 version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "447660ad36a13288b1db4d4248e857b510e8c3a225c822ba4fb748c0aafecffd"
+
+[[package]]
+name = "zen_template"
+version = "0.1.0"
+dependencies = [
+ "indoc",
+ "log",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "simple_logger",
+]
