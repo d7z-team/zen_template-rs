@@ -56,18 +56,18 @@ pub enum SymbolType {
 
 ///表达式
 #[derive(Debug)]
-pub struct Expression {
+pub struct ExpressionAST {
     pub variables: Vec<String>,
-    pub ast: ExpressionAST,
+    pub ast: ExpressionAstTree,
 }
 
 ///表达式 AST
 #[derive(Debug, Clone)]
-pub enum ExpressionAST {
+pub enum ExpressionAstTree {
     ///值
     ItemValue(TemplateValue),
     ///变量
     ItemVariable(String),
     ///原语（名称，参数）
-    ItemPrimitive(String, Vec<ExpressionAST>),
+    ItemPrimitive(String, Vec<ExpressionAstTree>),
 }

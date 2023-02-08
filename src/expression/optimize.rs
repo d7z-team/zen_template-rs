@@ -1,48 +1,48 @@
 use crate::error::TmplResult;
-use crate::expression::{Expression, ExpressionAST, ExpressionManager, PrimitiveRenderType};
+use crate::expression::{ExpressionAST, ExpressionAstTree, ExpressionManager, PrimitiveRenderType};
 use crate::value::TemplateValue;
 
 impl ExpressionManager {
     //优化结构
-    pub fn optimize(&self, expr: Expression) -> TmplResult<Expression> {
-        Ok(Expression::from(self.runner(&expr.ast, &|_| None)?))
+    pub fn optimize(&self, expr: ExpressionAST) -> TmplResult<ExpressionAST> {
+        Ok(ExpressionAST::from(self.runner(&expr.ast, &|_| None)?))
     }
     /// 渲染变量
-    pub fn runner<F>(&self, ast: &ExpressionAST, variable_getter: &F) -> TmplResult<ExpressionAST>
+    pub fn runner<F>(&self, ast: &ExpressionAstTree, variable_getter: &F) -> TmplResult<ExpressionAstTree>
         where F: Fn(&str) -> Option<TemplateValue> {
         match ast {
-            ExpressionAST::ItemValue(value) => Ok(ExpressionAST::ItemValue(value.clone())),
-            ExpressionAST::ItemVariable(name) => {
-                Ok(variable_getter(name.as_str()).map(|e| ExpressionAST::ItemValue(e.clone()))
-                    .or(Some(ExpressionAST::ItemVariable(name.to_owned()))).unwrap())
+            ExpressionAstTree::ItemValue(value) => Ok(ExpressionAstTree::ItemValue(value.clone())),
+            ExpressionAstTree::ItemVariable(name) => {
+                Ok(variable_getter(name.as_str()).map(|e| ExpressionAstTree::ItemValue(e.clone()))
+                    .or(Some(ExpressionAstTree::ItemVariable(name.to_owned()))).unwrap())
             }
-            ExpressionAST::ItemPrimitive(name, child) => {
+            ExpressionAstTree::ItemPrimitive(name, child) => {
                 let child = child.iter().map(|e| self.runner(e, variable_getter))
-                    .collect::<Vec<TmplResult<ExpressionAST>>>().into_iter().collect::<TmplResult<Vec<ExpressionAST>>>()?;
+                    .collect::<Vec<TmplResult<ExpressionAstTree>>>().into_iter().collect::<TmplResult<Vec<ExpressionAstTree>>>()?;
                 let mut params = vec![];
                 let mut fail_params = vec![];
                 for new_child in child {
                     match &new_child {
-                        ExpressionAST::ItemValue(data) => {
+                        ExpressionAstTree::ItemValue(data) => {
                             fail_params.push(new_child.clone());
                             params.push(data.clone())
                         }
-                        ExpressionAST::ItemVariable(_) => {
+                        ExpressionAstTree::ItemVariable(_) => {
                             fail_params.push(new_child);
                         }
-                        ExpressionAST::ItemPrimitive(_, _) => {
+                        ExpressionAstTree::ItemPrimitive(_, _) => {
                             fail_params.push(new_child);
                         }
                     }
                 }
                 return if fail_params.len() != params.len() {
                     // 存在未解析完成的
-                    Ok(ExpressionAST::ItemPrimitive(name.clone(), fail_params))
+                    Ok(ExpressionAstTree::ItemPrimitive(name.clone(), fail_params))
                 } else {
                     if let Some(PrimitiveRenderType::Native(primitive)) = self.primitive_renders.get(name.as_str()) {
-                        Ok(ExpressionAST::ItemValue(primitive(params)?))
+                        Ok(ExpressionAstTree::ItemValue(primitive(params)?))
                     } else {
-                        return Ok(ExpressionAST::ItemPrimitive(name.clone(), fail_params));
+                        return Ok(ExpressionAstTree::ItemPrimitive(name.clone(), fail_params));
                     }
                 };
             }

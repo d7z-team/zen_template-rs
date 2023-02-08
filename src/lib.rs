@@ -20,6 +20,7 @@ pub mod syntax;
 mod template;
 pub mod utils;
 pub mod value;
+mod statement;
 
 pub type ValueFormatter = dyn Fn(&Vec<&TemplateValue>) -> TmplResult<TemplateValue>;
 

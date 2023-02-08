@@ -1,4 +1,4 @@
-use crate::expression::Expression;
+use crate::expression::ExpressionAST;
 use crate::value::TemplateValue;
 
 /// 参数包装
@@ -6,7 +6,7 @@ use crate::value::TemplateValue;
 pub enum CommandParam {
     Keywords,
     Assignment(Vec<String>),
-    Expression(Expression),
+    Expression(ExpressionAST),
     StaticValue(TemplateValue),
 }
 
@@ -43,7 +43,7 @@ pub enum TemplateAst {
 }
 #[derive(Debug)]
 pub enum TemplateAstValue {
-    ItemExpression(Expression),
+    ItemExpression(ExpressionAST),
     ItemString(String),
 }
 
