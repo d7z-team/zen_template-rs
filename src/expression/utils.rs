@@ -16,10 +16,10 @@ pub enum ExpressCompileIR<'a> {
 impl ExpressCompileIR<'static> {
     //源码下的原始字符串提取出来
     pub fn parse_static_str(src: &str) -> Vec<ExpressCompileIR> {
-        Block::new_group(src.trim(), "\"", "\"", &vec![("'", "'")])
+        Block::new_group(src.trim(), ("\"", "\""), &vec![("'", "'")])
             .into_iter()
             .flat_map(|e| match e {
-                Block::Static(d) => Block::new_group(d, "'", "'", &vec![("\"", "\"")])
+                Block::Static(d) => Block::new_group(d, ("'", "'"), &vec![("\"", "\"")])
                     .into_iter()
                     .map(|e| match e {
                         Block::Dynamic(dy) => Tag(ItemValue(TemplateValue::Text(dy.to_string()))),

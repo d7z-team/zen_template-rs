@@ -4,6 +4,8 @@ use crate::ast::TemplateAst;
 use crate::compile::ast_stack::TmplAstStack;
 use crate::config::TemplateConfig;
 use crate::error::TmplResult;
+use crate::statement::state_builder::StateBuilder;
+use crate::statement::statement::{StatementAstTree, StatementValue};
 use crate::utils::Block;
 
 pub mod ast_stack;
@@ -18,14 +20,23 @@ impl Compile {
     }
     pub fn build_template(&self, src: &str) -> TmplResult<Vec<TemplateAst>> {
         let mut stack = TmplAstStack::default();
-        let block_arr = Block::new_group(
-            src,
-            &self.config.block_symbol.0,
-            &self.config.block_symbol.1,
-            &vec![("'", "'"), ("\"", "\"")],
-        );
+        let mut builder = StateBuilder::default();
+
+        for block in self.config.parse_block(src).iter() {
+            match block {
+                Block::Dynamic(src) => {
+
+
+                }
+                Block::Static(text) => {
+                    // 添加静态数据
+                    builder.add(StatementAstTree::ItemValue(StatementValue::ItemStatic(text.to_string())))?;
+                }
+            }
+        }
+
         // 将静态数据加入到栈中
-        for src_block in block_arr.iter() {
+        for src_block in self.config.parse_block(src).iter() {
             //当前块为关键字
             if let Block::Dynamic(src) = *src_block {
                 //栈内存在未结束分支对象,需要考虑是否为分支内子分支或分支结束操作符

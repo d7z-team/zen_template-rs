@@ -101,41 +101,8 @@ impl StringUtils {
         }
         true
     }
-
-    pub fn next_expr(src: &str, skip_unknown: bool) -> Option<(usize, usize)> {
-        let mut start = None;
-        for (index, item) in src.chars().enumerate() {
-            if item == ' ' {
-                if let Some(start) = start {
-                    return Some((start, index));
-                } else {
-                    continue;
-                }
-            }
-            if ('A'..='Z').contains(&item)
-                || ('a'..='z').contains(&item)
-                || ('0'..='9').contains(&item)
-                || item == '_'
-            {
-                if start == None {
-                    start = Some(index)
-                }
-                //是个变量
-            } else {
-                if let Some(start) = start {
-                    return Some((start, index));
-                } else {
-                    if skip_unknown {
-                        continue;
-                    } else {
-                        return None;
-                    }
-                }
-            }
-        }
-        None
-    }
 }
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum Block<'a> {
     Dynamic(&'a str),
@@ -145,22 +112,20 @@ pub enum Block<'a> {
 impl Block<'static> {
     pub fn new_group<'a>(
         src: &'a str,
-        start_tag: &str,
-        end_tag: &str,
+        tag: (&str, &str),
         ignore_blocks: &Vec<(&str, &str)>,
     ) -> Vec<Block<'a>> {
         let mut result = vec![];
         let mut index = 0;
         loop {
             if let Some((current_start, current_end)) =
-                StringUtils::find_block_skip_ignore(src, index, start_tag, end_tag, ignore_blocks)
+                StringUtils::find_block_skip_ignore(src, index, tag.0, tag.1, ignore_blocks)
             {
                 if current_start > index {
                     result.push(Block::Static(&src[index..current_start]));
                 }
-                let dyn_src = &src[current_start + start_tag.len()..current_end - end_tag.len()];
+                let dyn_src = &src[current_start + tag.0.len()..current_end - tag.1.len()];
                 result.push(Block::Dynamic(dyn_src));
-
                 index = current_end
             } else {
                 if index < src.len() {

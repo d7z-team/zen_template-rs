@@ -3,6 +3,7 @@ use crate::expression::ExpressionManager;
 
 use crate::syntax::OperatorSyntax;
 use crate::template::default_state;
+use crate::utils::Block;
 use crate::ValueFormatter;
 
 /// 模板配置项
@@ -24,6 +25,14 @@ impl TemplateConfig {
         self.operators
             .iter()
             .find(|item| src.starts_with(&format!("{} ", item.get_start_tag())))
+    }
+    /// 解析源码内的匹配关键字
+    pub fn parse_block<'a>(&self, src: &'a str) -> Vec<Block<'a>> {
+        Block::new_group(
+            src,
+            (self.block_symbol.0.as_str(), self.block_symbol.1.as_str()),
+            &vec![("'", "'"), ("\"", "\"")],
+        )
     }
 }
 

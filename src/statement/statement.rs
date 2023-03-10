@@ -2,6 +2,7 @@ use crate::expression::ExpressionAST;
 
 pub struct Statement {}
 
+// 流程控制最小化单元
 pub enum StatementAstTree {
     /// 变量渲染，属于控制对象
     ItemValue(StatementValue),
@@ -40,7 +41,7 @@ pub enum StateParamType {
     Keyword(String),
     //变量： abc 、abc,abd、_,abc
     Variables,
-    // 表达式 （一般前后跟随）关键字，否则不好匹配
+    // 表达式 （一般前后跟随）关键字，否则不便于匹配
     Expression,
     // 静态数据
     StaticValue,
