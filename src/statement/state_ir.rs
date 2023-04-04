@@ -7,7 +7,7 @@ pub struct DynamicBlock<'a>{
     params: Vec<&'a str>
 }
 impl DynamicBlock<'static>{
-    fn new<'a>(src:&'a str)->DynamicBlock<'a>{
+    fn new(src: &str) ->DynamicBlock {
         let mut src = src.trim();
         let mut trim = (false, false);
         // 检查 trim 选项
