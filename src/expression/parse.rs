@@ -16,8 +16,7 @@ impl ExpressionIR {
         {
             if let Some(ExpressionIR::ItemVariable(vars)) = Some(index)
                 .filter(|e| *e > 0)
-                .map(|i| src.get_mut(i - 1))
-                .flatten()
+                .and_then(|i| src.get_mut(i - 1))
             {
                 let last = vars.remove(vars.len() - 1);
                 // 确定为原语
@@ -28,7 +27,7 @@ impl ExpressionIR {
             }
         }
         let mut stack = ExpressionStack::default();
-        while src.len() != 0 {
+        while !src.is_empty() {
             let item = src.remove(0);
             match &item {
                 ExpressionIR::ItemSymbol(SymbolType::BlockEnd) => {

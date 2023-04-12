@@ -15,7 +15,7 @@ impl ExpressionManager {
     ) -> TmplResult<()> {
         let mut content = vec![];
         loop {
-            if input.len() > 0 {
+            if !input.is_empty() {
                 let data = input.remove(0);
                 if let Original(src) = data {
                     let mut last_start = 0;
@@ -29,7 +29,7 @@ impl ExpressionManager {
                                 child_content.push(Original(data));
                             }
                             child_content.push(Tag(ItemSymbol(symbol.clone())));
-                            last_start = index + &symbol.to_string().len();
+                            last_start = index + symbol.to_string().len();
                         } else {
                             if let Some(data) =
                                 Some(&src[last_start..]).filter(|e| e.is_empty().not())
@@ -47,7 +47,7 @@ impl ExpressionManager {
                 break;
             }
         }
-        *input = content.into_iter().flat_map(|e| e).collect();
+        *input = content.into_iter().flatten().collect();
         Ok(())
     }
     /// 标记所有字符
@@ -72,7 +72,7 @@ impl ExpressionManager {
                     TemplateValue::Bool(b) => ItemValue(TemplateValue::Bool(b)),
                     _ => ItemVariable(
                         data.trim()
-                            .split(".")
+                            .split('.')
                             .filter(|e| e.trim().is_empty().not())
                             .map(|e| e.to_string())
                             .collect(),

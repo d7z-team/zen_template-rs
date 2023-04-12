@@ -6,18 +6,17 @@ use crate::value::TemplateValue;
 
 impl ExpressionIR {
     ///将表达式转换为 AST
-    pub fn to_ast(self: Self) -> TmplResult<ExpressionAstTree> {
+    pub fn to_ast(self) -> TmplResult<ExpressionAstTree> {
         let ast = match self {
-            ExpressionIR::ItemGroup(_) | ExpressionIR::ItemSymbol(_) => Err(SyntaxError(format!(
-                "无法将 IR 的 Group/Symbol 转换为 AST，可能是 IR 存在未知符号或语法错误."
-            )))?,
+            ExpressionIR::ItemGroup(_) | ExpressionIR::ItemSymbol(_) =>
+                Err(SyntaxError("无法将 IR 的 Group/Symbol 转换为 AST，可能是 IR 存在未知符号或语法错误.".to_string()))?,
 
             ExpressionIR::ItemValue(value) => ExpressionAstTree::ItemValue(value),
             ExpressionIR::ItemPrimitive(name, child) => ExpressionAstTree::ItemPrimitive(
                 name,
                 child
                     .into_iter()
-                    .flat_map(|e| ExpressionIR::to_ast(e))
+                    .flat_map(ExpressionIR::to_ast)
                     .collect::<Vec<ExpressionAstTree>>(),
             ),
             ExpressionIR::ItemVariable(mut vars) => {
@@ -38,7 +37,7 @@ impl ExpressionIR {
 }
 
 impl ExpressionAST {
-    fn put_variables(ast: &Vec<ExpressionAstTree>, variables: &mut Vec<String>) {
+    fn put_variables(ast: &[ExpressionAstTree], variables: &mut Vec<String>) {
         ast.iter().for_each(|e| match e {
             ExpressionAstTree::ItemVariable(name) => variables.push(name.to_string()),
             ExpressionAstTree::ItemPrimitive(_, child) => Self::put_variables(child, variables),

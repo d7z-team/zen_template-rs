@@ -28,7 +28,6 @@ impl ToString for ExpressionIR {
                     .map(|e| e.as_str())
                     .collect::<Vec<&str>>()
                     .join(".")
-                    .to_string()
             ),
 
             ExpressionIR::ItemPrimitive(name, child) => {

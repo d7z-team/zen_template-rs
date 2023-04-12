@@ -13,8 +13,8 @@ impl ExpressionManager {
         match ast {
             ExpressionAstTree::ItemValue(value) => Ok(ExpressionAstTree::ItemValue(value.clone())),
             ExpressionAstTree::ItemVariable(name) => {
-                Ok(variable_getter(name.as_str()).map(|e| ExpressionAstTree::ItemValue(e.clone()))
-                    .or(Some(ExpressionAstTree::ItemVariable(name.to_owned()))).unwrap())
+                Ok(variable_getter(name.as_str()).map(ExpressionAstTree::ItemValue)
+                    .unwrap_or(ExpressionAstTree::ItemVariable(name.to_owned())))
             }
             ExpressionAstTree::ItemPrimitive(name, child) => {
                 let child = child.iter().map(|e| self.runner(e, variable_getter))
@@ -38,12 +38,10 @@ impl ExpressionManager {
                 return if fail_params.len() != params.len() {
                     // 存在未解析完成的
                     Ok(ExpressionAstTree::ItemPrimitive(name.clone(), fail_params))
+                } else if let Some(PrimitiveRenderType::Native(primitive)) = self.primitive_renders.get(name.as_str()) {
+                    Ok(ExpressionAstTree::ItemValue(primitive(params)?))
                 } else {
-                    if let Some(PrimitiveRenderType::Native(primitive)) = self.primitive_renders.get(name.as_str()) {
-                        Ok(ExpressionAstTree::ItemValue(primitive(params)?))
-                    } else {
-                        return Ok(ExpressionAstTree::ItemPrimitive(name.clone(), fail_params));
-                    }
+                    return Ok(ExpressionAstTree::ItemPrimitive(name.clone(), fail_params));
                 };
             }
         }
@@ -66,7 +64,7 @@ mod test {
         vars.insert("first".to_string(), TemplateValue::Number(12));
         vars.insert("second".to_string(), TemplateValue::Number(12));
         let func = |src: &str| -> Option<TemplateValue> {
-            vars.get(src).map(|e| e.clone())
+            vars.get(src).cloned()
         };
         assert_eq!(manager.runner(&manager.compile("1 + (2 * 3) + 21").unwrap()
             .ast, &func,

@@ -9,6 +9,7 @@ use crate::error::TemplateError::{ExistsError, GenericError};
 use crate::error::TmplResult;
 use crate::syntax::{BranchSyntaxWrapper, OperatorSyntax};
 
+#[derive(Default)]
 pub struct TmplAstStack {
     pub root: Vec<TemplateAst>,
     pub child_stack: Vec<TemplateAst>,
@@ -72,7 +73,7 @@ impl TmplAstStack {
     ///获取栈顶操作符类型
     pub fn get_stack_top_operator<'a>(
         &self,
-        operator_arr: &'a Vec<OperatorSyntax>,
+        operator_arr: &'a [OperatorSyntax],
     ) -> TmplResult<Option<&'a BranchSyntaxWrapper>> {
         if let Some(ItemBranch(key, _, _)) = self.child_stack.last() {
             operator_arr
@@ -90,7 +91,7 @@ impl TmplAstStack {
             Ok(None)
         }
     }
-    pub fn check_scope(&self, scope: &Vec<String>) -> TmplResult<()> {
+    pub fn check_scope(&self, scope: &[String]) -> TmplResult<()> {
         let context = self
             .child_stack
             .iter()
@@ -99,7 +100,6 @@ impl TmplAstStack {
         let not_matched = scope
             .iter()
             .filter(|e| context.contains(e.as_str()).not())
-            .map(|e| e)
             .collect::<Vec<&String>>();
         if not_matched.is_empty().not() {
             Err(GenericError(format!("{:?} 不在作用域内", not_matched)))
@@ -109,11 +109,3 @@ impl TmplAstStack {
     }
 }
 
-impl Default for TmplAstStack {
-    fn default() -> Self {
-        TmplAstStack {
-            root: vec![],
-            child_stack: vec![],
-        }
-    }
-}

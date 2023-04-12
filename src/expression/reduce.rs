@@ -9,7 +9,7 @@ impl ExpressionIR {
             return Ok(());
         }
         let mut result = vec![];
-        while src.len() >= 1 {
+        while !src.is_empty() {
             let current = src.remove(0);
             let mut next_fun = || Some(src.len()).filter(|l| *l > 0).map(|_| src.remove(0));
             if let ItemSymbol(_) = current {

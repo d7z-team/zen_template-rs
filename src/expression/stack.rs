@@ -27,7 +27,7 @@ impl ExpressionStack {
             Some(ExpressionIR::ItemPrimitive(_, value)) => {
                 value.push(item)
             }
-            _ => Err(SyntaxError(format!("栈内已无等待关闭的对象，可能存在语法错误！")))?,
+            _ => Err(SyntaxError("栈内已无等待关闭的对象，可能存在语法错误！".to_string()))?,
         }
         Ok(())
     }

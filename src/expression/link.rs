@@ -47,11 +47,11 @@ impl ExpressionManager {
             let func = &covert.covert;
             src[k - 1] = func(left, right); // 填充旧位置
         }
-        return Ok(());
+        Ok(())
     }
 
     ///转换预定义的原语
-    pub fn link_static_primitives(&self, src: &mut Vec<ExpressionIR>) -> TmplResult<()> {
+    pub fn link_static_primitives(&self, src: &mut [ExpressionIR]) -> TmplResult<()> {
         for (key, func) in &self.primitive_renders {
             if let PrimitiveRenderType::Translate(func) = func {
                 Self::link_static_primitive(src, key, func)?;
@@ -60,7 +60,7 @@ impl ExpressionManager {
         Ok(())
     }
     fn link_static_primitive(
-        src: &mut Vec<ExpressionIR>,
+        src: &mut [ExpressionIR],
         name: &str,
         func: &fn(Vec<ExpressionIR>) -> TmplResult<ExpressionIR>,
     ) -> TmplResult<()> {
