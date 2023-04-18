@@ -42,7 +42,7 @@ impl CommandSyntax {
                 src, self
             )));
         }
-        for (key, param_syntax_arr) in &self.syntax {
+        if let Some((key, param_syntax_arr)) = self.syntax.iter().next() {
             let mut result: Vec<CommandParam> = vec![];
             let mut src = src.trim();
             for param_syntax in param_syntax_arr {
@@ -56,15 +56,15 @@ impl CommandSyntax {
                         }
                     }
                     ParamSyntax::Assignment => {
-                        if let Some(end) = src.find("=") {
+                        if let Some(end) = src.find('=') {
                             let param = &src[..end].trim();
-                            let params = if param.starts_with("(") && param.ends_with(")") {
-                                param.split(",").collect::<Vec<&str>>()
+                            let params = if param.starts_with('(') && param.ends_with(')') {
+                                param.split(',').collect::<Vec<&str>>()
                             } else {
                                 vec![*param]
                             };
                             if let Some(inv_expr) =
-                                params.iter().find(|e| StringUtils::is_expr(**e).not())
+                                params.iter().find(|e| StringUtils::is_expr(e).not())
                             {
                                 debug!("变量 {:?} 格式错误！", inv_expr);
                                 continue;
@@ -81,7 +81,7 @@ impl CommandSyntax {
                     ParamSyntax::StaticValue => {}
                 }
             }
-            return Ok(Branch::new(&key.as_str(), result));
+            return Ok(Branch::new(key.as_str(), result));
         }
         return Err(GenericError(format!(
             "表达式 {} 未找到匹配的解析规则！",

@@ -24,7 +24,7 @@ impl Compile {
 
         for block in self.config.parse_block(src).iter() {
             match block {
-                Block::Dynamic(src) => {
+                Block::Dynamic(_src) => {
 
 
                 }
